@@ -1,0 +1,155 @@
+name: 'Skillz'
+description: 'Validate Agent Skills against the specification'
+author: 'skillz'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Path to skills directory or specific skill'
+    required: false
+    default: '.'
+  command:
+    description: 'Command to run: check, lint, fmt, new'
+    required: false
+    default: 'check'
+  strict:
+    description: 'Enable strict mode (treat warnings as errors)'
+    required: false
+    default: 'true'
+  format:
+    description: 'Output format: text, json, sarif'
+    required: false
+    default: 'text'
+  version:
+    description: 'Skillz version to use'
+    required: false
+    default: 'latest'
+  upload-sarif:
+    description: 'Upload SARIF results to GitHub Security tab'
+    required: false
+    default: 'false'
+  # Options for 'new' command
+  skill-name:
+    description: 'Name of the skill to create (for new command)'
+    required: false
+    default: ''
+  template:
+    description: 'Template to use: hello-world, minimal, full, script-based'
+    required: false
+    default: 'hello-world'
+  lang:
+    description: 'Preferred script language: python, bash, javascript, typescript'
+    required: false
+    default: 'python'
+  license:
+    description: 'License for the skill (SPDX identifier)'
+    required: false
+    default: ''
+
+outputs:
+  exit-code:
+    description: 'Exit code from skillz command'
+    value: ${{ steps.run.outputs.exit-code }}
+  sarif-file:
+    description: 'Path to SARIF output file (if generated)'
+    value: ${{ steps.run.outputs.sarif-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Determine version
+      id: version
+      shell: bash
+      run: |
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          VERSION=$(curl -fsSL https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+        else
+          VERSION="${{ inputs.version }}"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Cache skillz binary
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/bin/skillz
+        key: skillz-${{ runner.os }}-${{ steps.version.outputs.version }}
+
+    - name: Install skillz
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p ~/.local/bin
+        ARCH=$(uname -m)
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+        case "$OS-$ARCH" in
+          linux-x86_64)  TARGET="linux-x86_64" ;;
+          linux-aarch64) TARGET="linux-aarch64" ;;
+          darwin-x86_64) TARGET="darwin-x86_64" ;;
+          darwin-arm64)  TARGET="darwin-aarch64" ;;
+          *)
+            echo "::error::Unsupported platform: $OS-$ARCH"
+            exit 1
+            ;;
+        esac
+
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/skillz-${TARGET}.tar.gz" | tar xz -C ~/.local/bin
+
+    - name: Add to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Run skillz
+      id: run
+      shell: bash
+      run: |
+        set +e
+
+        if [ "${{ inputs.command }}" = "new" ]; then
+          # Handle 'new' command
+          SKILL_NAME="${{ inputs.skill-name }}"
+          if [ -z "$SKILL_NAME" ]; then
+            echo "::error::skill-name is required for 'new' command"
+            exit 2
+          fi
+
+          ARGS="$SKILL_NAME --template ${{ inputs.template }} --lang ${{ inputs.lang }}"
+
+          if [ -n "${{ inputs.license }}" ]; then
+            ARGS="$ARGS --license ${{ inputs.license }}"
+          fi
+
+          skillz new $ARGS
+          EXIT_CODE=$?
+        else
+          # Handle check, lint, fmt commands
+          ARGS="${{ inputs.path }}"
+
+          if [ "${{ inputs.command }}" = "lint" ] && [ "${{ inputs.strict }}" = "true" ]; then
+            ARGS="$ARGS --strict"
+          fi
+
+          if [ "${{ inputs.format }}" = "sarif" ]; then
+            SARIF_FILE="skillz-results.sarif"
+            skillz ${{ inputs.command }} $ARGS --format sarif > "$SARIF_FILE"
+            EXIT_CODE=$?
+            echo "sarif-file=$SARIF_FILE" >> $GITHUB_OUTPUT
+          else
+            skillz ${{ inputs.command }} $ARGS --format ${{ inputs.format }}
+            EXIT_CODE=$?
+          fi
+        fi
+
+        echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
+        exit $EXIT_CODE
+
+    - name: Upload SARIF
+      if: inputs.upload-sarif == 'true' && inputs.format == 'sarif'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: skillz-results.sarif
+      continue-on-error: true
