@@ -90,7 +90,7 @@ impl Manifest {
     }
 
     /// Reconstruct the full SKILL.md content
-    pub fn to_string(&self) -> String {
+    pub fn render(&self) -> String {
         format!("---\n{}\n---\n\n{}", self.frontmatter_raw.trim(), self.body)
     }
 

@@ -45,9 +45,10 @@ pub fn run(args: LintArgs, config: &Config, cli: &Cli) -> Result<i32, SkillzErro
     let total_errors: usize = results.iter().map(|(_, r)| r.errors.len()).sum();
     let total_warnings: usize = results.iter().map(|(_, r)| r.warnings.len()).sum();
 
-    if parse_errors > 0 || total_errors > 0 {
-        Ok(1)
-    } else if strict && total_warnings > 0 {
+    let has_errors = parse_errors > 0 || total_errors > 0;
+    let has_strict_warnings = strict && total_warnings > 0;
+
+    if has_errors || has_strict_warnings {
         Ok(1)
     } else {
         Ok(0)
