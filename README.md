@@ -139,6 +139,51 @@ default_template = "hello-world"
 default_lang = "python"
 ```
 
+## CI Integration
+
+Add skillz validation to your GitHub Actions workflow:
+
+```yaml
+# .github/workflows/skills.yml
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install skillz
+        run: cargo install --git https://github.com/manuelmauro/skillz
+
+      - name: Lint skills
+        run: skillz lint . --strict
+
+      - name: Check formatting
+        run: skillz fmt . --check
+```
+
+To upload results to GitHub's Security tab, use SARIF output:
+
+```yaml
+      - name: Run skillz check
+        run: skillz lint . --format sarif > results.sarif
+        continue-on-error: true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+```
+
 ## Exit Codes
 
 | Code | Meaning                            |
