@@ -7,6 +7,9 @@ description = "CLI tool for Agent Skills development"
 license = "MIT OR Apache-2.0"
 keywords = ["agent", "skills", "cli", "ai"]
 categories = ["command-line-utilities", "development-tools"]
+repository = "https://github.com/manuelmauro/skilo"
+homepage = "https://github.com/manuelmauro/skilo"
+readme = "README.md"
 
 [dependencies]
 # CLI
