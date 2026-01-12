@@ -28,6 +28,14 @@ pub enum Command {
     New(NewArgs),
 
     /// Validate skills against the specification
+    ///
+    /// Skills must be directories containing a SKILL.md file with valid frontmatter.
+    /// Example structure:
+    ///   my-skill/
+    ///     SKILL.md      # Required: contains name, description in YAML frontmatter
+    ///     scripts/      # Optional: executable scripts
+    ///     tests/        # Optional: test files
+    #[command(verbatim_doc_comment)]
     Lint(LintArgs),
 
     /// Format SKILL.md files
