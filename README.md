@@ -159,7 +159,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install skillz
         run: cargo install --git https://github.com/manuelmauro/skillz
