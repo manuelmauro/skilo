@@ -89,12 +89,6 @@ impl Manifest {
 
         Ok((frontmatter, body, body_start_line))
     }
-
-    /// Reconstruct with reformatted frontmatter
-    pub fn to_string_formatted(&self) -> Result<String, serde_yaml::Error> {
-        let yaml = self.frontmatter.to_yaml()?;
-        Ok(format!("---\n{}---\n\n{}", yaml, self.body))
-    }
 }
 
 impl fmt::Display for Manifest {

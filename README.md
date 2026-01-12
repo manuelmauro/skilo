@@ -67,7 +67,7 @@ skilo lint --fix .
 ### Format skills
 
 ```bash
-# Format SKILL.md files
+# Format SKILL.md files (includes table alignment)
 skilo fmt path/to/skill
 
 # Check formatting without modifying
@@ -76,6 +76,10 @@ skilo fmt --check .
 # Show diff of changes
 skilo fmt --diff .
 ```
+
+Formatting includes:
+- YAML frontmatter normalization
+- Markdown table column alignment
 
 ### Run all checks
 
@@ -132,6 +136,7 @@ max_body_lines = 500
 [fmt]
 sort_frontmatter = true
 indent_size = 2
+format_tables = true
 
 [new]
 default_license = "MIT"

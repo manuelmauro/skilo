@@ -2,11 +2,12 @@ use crate::cli::{Cli, FmtArgs};
 use crate::config::Config;
 use crate::error::SkillzError;
 use crate::output::get_formatter;
-use crate::skill::{Discovery, Manifest};
+use crate::skill::{Discovery, Formatter, FormatterConfig, Manifest};
 use colored::Colorize;
 
-pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzError> {
-    let formatter = get_formatter(cli.format, cli.quiet);
+pub fn run(args: FmtArgs, config: &Config, cli: &Cli) -> Result<i32, SkillzError> {
+    let output_formatter = get_formatter(cli.format, cli.quiet);
+    let skill_formatter = Formatter::new(FormatterConfig::from(&config.fmt));
 
     // Find all skills
     let skill_paths = Discovery::find_skills(&args.path);
@@ -26,10 +27,10 @@ pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzErro
                 files_checked += 1;
 
                 // Get formatted content
-                let formatted = match manifest.to_string_formatted() {
+                let formatted = match skill_formatter.format(&manifest) {
                     Ok(f) => f,
                     Err(e) => {
-                        formatter.format_error(&format!("{}: {}", path.display(), e));
+                        output_formatter.format_error(&format!("{}: {}", path.display(), e));
                         continue;
                     }
                 };
@@ -41,7 +42,7 @@ pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzErro
                     files_changed += 1;
 
                     if args.check {
-                        formatter.format_message(&format!(
+                        output_formatter.format_message(&format!(
                             "{} {} needs formatting",
                             "!".yellow(),
                             path.display()
@@ -54,7 +55,7 @@ pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzErro
                     } else {
                         // Write formatted content
                         std::fs::write(path, &formatted)?;
-                        formatter.format_message(&format!(
+                        output_formatter.format_message(&format!(
                             "{} Formatted {}",
                             "✓".green(),
                             path.display()
@@ -63,21 +64,21 @@ pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzErro
                 }
             }
             Err(e) => {
-                formatter.format_error(&format!("{}: {}", path.display(), e));
+                output_formatter.format_error(&format!("{}: {}", path.display(), e));
             }
         }
     }
 
     if args.check {
         if files_changed > 0 {
-            formatter.format_message(&format!(
+            output_formatter.format_message(&format!(
                 "\n{} {} file(s) need formatting",
                 "!".yellow(),
                 files_changed
             ));
             Ok(1)
         } else {
-            formatter.format_success(&format!(
+            output_formatter.format_success(&format!(
                 "{} file(s) checked, all formatted correctly",
                 files_checked
             ));
@@ -85,9 +86,9 @@ pub fn run(args: FmtArgs, _config: &Config, cli: &Cli) -> Result<i32, SkillzErro
         }
     } else {
         if files_changed > 0 {
-            formatter.format_success(&format!("Formatted {} file(s)", files_changed));
+            output_formatter.format_success(&format!("Formatted {} file(s)", files_changed));
         } else {
-            formatter.format_success(&format!(
+            output_formatter.format_success(&format!(
                 "{} file(s) already formatted correctly",
                 files_checked
             ));

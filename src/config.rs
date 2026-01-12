@@ -30,6 +30,7 @@ impl Default for LintConfig {
 pub struct FmtConfig {
     pub sort_frontmatter: bool,
     pub indent_size: usize,
+    pub format_tables: bool,
 }
 
 impl Default for FmtConfig {
@@ -37,6 +38,7 @@ impl Default for FmtConfig {
         Self {
             sort_frontmatter: true,
             indent_size: 2,
+            format_tables: true,
         }
     }
 }
