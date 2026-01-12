@@ -162,7 +162,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install skilo
-        run: cargo install --git https://github.com/manuelmauro/skilo --tag v0.1.0
+        run: cargo install skilo@0.1.0
 
       - name: Lint skills
         run: skilo lint . --strict
