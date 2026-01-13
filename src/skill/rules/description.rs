@@ -1,8 +1,10 @@
+//! Validates skill descriptions: presence and length.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 
-/// E004: Validates description is not empty
+/// E004: Validates description is not empty.
 pub struct DescriptionRequiredRule;
 
 impl Rule for DescriptionRequiredRule {
@@ -28,12 +30,14 @@ impl Rule for DescriptionRequiredRule {
     }
 }
 
-/// E005: Validates description length
+/// E005: Validates description length.
 pub struct DescriptionLengthRule {
+    /// Maximum allowed description length.
     max_length: usize,
 }
 
 impl DescriptionLengthRule {
+    /// Create a new description length rule with the specified maximum.
     pub fn new(max_length: usize) -> Self {
         Self { max_length }
     }

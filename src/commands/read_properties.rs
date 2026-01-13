@@ -1,3 +1,5 @@
+//! Outputs skill metadata as JSON for integration with other tools.
+
 use crate::cli::{Cli, ReadPropertiesArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
@@ -6,7 +8,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-/// JSON output structure for a single skill's properties
+/// JSON output structure for a single skill's properties.
 #[derive(Serialize)]
 pub struct SkillProperties {
     /// Name of the skill
@@ -49,6 +51,9 @@ impl From<&Manifest> for SkillProperties {
     }
 }
 
+/// Run the read-properties command.
+///
+/// Outputs JSON with skill metadata from frontmatter.
 pub fn run(args: ReadPropertiesArgs, _config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     // Collect all skill paths from all input paths
     let mut all_skill_paths: Vec<PathBuf> = Vec::new();

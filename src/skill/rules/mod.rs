@@ -1,3 +1,8 @@
+//! Validation rules for skill manifests.
+//!
+//! This module contains individual lint rules that check different aspects
+//! of skill manifests, from name format to script permissions.
+
 mod body_length;
 mod compatibility;
 mod description;

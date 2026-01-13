@@ -1,20 +1,22 @@
+//! Configuration file handling.
+
 use serde::{Deserialize, Deserializer};
 use std::path::PathBuf;
 
 /// A configurable threshold that can be default, disabled, or a specific value.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Threshold {
-    /// Use the default value for this rule
+    /// Use the default value for this rule.
     #[default]
     Default,
-    /// Rule is disabled
+    /// Rule is disabled.
     Disabled,
-    /// Rule is enabled with a specific value
+    /// Rule is enabled with a specific value.
     Value(usize),
 }
 
 impl Threshold {
-    /// Resolve the threshold to an Option<usize> given a default value.
+    /// Resolve the threshold to an `Option<usize>` given a default value.
     pub fn resolve(self, default: usize) -> Option<usize> {
         match self {
             Self::Default => Some(default),
@@ -42,37 +44,55 @@ where
     }
 }
 
+/// Top-level configuration.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct Config {
+    /// Lint configuration.
     pub lint: LintConfig,
+    /// Format configuration.
     pub fmt: FmtConfig,
+    /// New command configuration.
     pub new: NewConfig,
 }
 
+/// Configuration for the lint command.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct LintConfig {
+    /// Treat warnings as errors.
     pub strict: bool,
+    /// Rule-specific configuration.
     pub rules: RulesConfig,
 }
 
+/// Configuration for individual lint rules.
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 pub struct RulesConfig {
+    /// Enable name format validation (E001).
     pub name_format: bool,
+    /// Maximum name length (E002).
     #[serde(deserialize_with = "deserialize_threshold")]
     pub name_length: Threshold,
+    /// Enable name/directory match validation (E003).
     pub name_directory: bool,
+    /// Require description (E004).
     pub description_required: bool,
+    /// Maximum description length (E005).
     #[serde(deserialize_with = "deserialize_threshold")]
     pub description_length: Threshold,
+    /// Maximum compatibility length (E006).
     #[serde(deserialize_with = "deserialize_threshold")]
     pub compatibility_length: Threshold,
+    /// Validate referenced files exist (E009).
     pub references_exist: bool,
+    /// Maximum body length in lines (W001).
     #[serde(deserialize_with = "deserialize_threshold")]
     pub body_length: Threshold,
+    /// Check scripts are executable (W002).
     pub script_executable: bool,
+    /// Check scripts have shebang (W003).
     pub script_shebang: bool,
 }
 
@@ -93,11 +113,15 @@ impl Default for RulesConfig {
     }
 }
 
+/// Configuration for the fmt command.
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 pub struct FmtConfig {
+    /// Sort frontmatter keys.
     pub sort_frontmatter: bool,
+    /// Indentation size.
     pub indent_size: usize,
+    /// Format markdown tables.
     pub format_tables: bool,
 }
 
@@ -111,11 +135,15 @@ impl Default for FmtConfig {
     }
 }
 
+/// Configuration for the new command.
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 pub struct NewConfig {
+    /// Default license for new skills.
     pub default_license: Option<String>,
+    /// Default template for new skills.
     pub default_template: String,
+    /// Default script language for new skills.
     pub default_lang: String,
 }
 
@@ -130,6 +158,7 @@ impl Default for NewConfig {
 }
 
 impl Config {
+    /// Load configuration from a file or find it automatically.
     pub fn load(path: Option<&PathBuf>) -> std::result::Result<Self, std::io::Error> {
         let config_path = path.cloned().or_else(Self::find_config);
 

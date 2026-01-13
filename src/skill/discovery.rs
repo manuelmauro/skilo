@@ -1,11 +1,14 @@
+//! Skill discovery utilities.
+
 use crate::skill::manifest::{Manifest, ManifestError};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+/// Utility for discovering skills in the filesystem.
 pub struct Discovery;
 
 impl Discovery {
-    /// Find all SKILL.md files in a directory tree
+    /// Find all SKILL.md files in a directory tree.
     pub fn find_skills(root: &Path) -> Vec<PathBuf> {
         // If root is a SKILL.md file, return it directly
         if root.is_file() && root.file_name().map(|n| n == "SKILL.md").unwrap_or(false) {
@@ -28,7 +31,7 @@ impl Discovery {
             .collect()
     }
 
-    /// Load all skills from a list of paths
+    /// Load all skills from a list of paths.
     pub fn load_skills(paths: &[PathBuf]) -> Vec<Result<Manifest, (PathBuf, ManifestError)>> {
         paths
             .iter()
@@ -36,7 +39,7 @@ impl Discovery {
             .collect()
     }
 
-    /// Find and load all skills in a directory
+    /// Find and load all skills in a directory.
     pub fn discover(root: &Path) -> Vec<Result<Manifest, (PathBuf, ManifestError)>> {
         let paths = Self::find_skills(root);
         Self::load_skills(&paths)

@@ -1,3 +1,5 @@
+//! Generates XML for embedding skill information in agent prompts.
+
 use crate::cli::{Cli, ToPromptArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
@@ -5,19 +7,23 @@ use crate::skill::{Discovery, Manifest};
 use serde::Serialize;
 use std::path::PathBuf;
 
-/// Root element for XML output
+/// Root element for XML output.
 #[derive(Serialize)]
 #[serde(rename = "available_skills")]
 struct AvailableSkills {
+    /// List of skills.
     #[serde(rename = "skill")]
     skills: Vec<SkillEntry>,
 }
 
-/// Represents a skill for XML output
+/// Represents a skill entry in XML output.
 #[derive(Serialize)]
 struct SkillEntry {
+    /// Skill name.
     name: String,
+    /// Skill description.
     description: String,
+    /// Path to the SKILL.md file.
     location: String,
 }
 
@@ -31,6 +37,9 @@ impl From<&Manifest> for SkillEntry {
     }
 }
 
+/// Run the to-prompt command.
+///
+/// Generates `<available_skills>` XML for agent prompts.
 pub fn run(args: ToPromptArgs, _config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     // Collect all skill paths from all input paths
     let mut all_skill_paths: Vec<PathBuf> = Vec::new();

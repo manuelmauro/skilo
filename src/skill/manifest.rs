@@ -1,47 +1,57 @@
+//! SKILL.md manifest parsing.
+
 use crate::skill::frontmatter::Frontmatter;
 use std::fmt;
 use std::path::PathBuf;
 use thiserror::Error;
 
+/// A parsed SKILL.md file.
 #[derive(Debug)]
 pub struct Manifest {
-    /// Path to the SKILL.md file
+    /// Path to the SKILL.md file.
     pub path: PathBuf,
 
-    /// Parsed frontmatter
+    /// Parsed frontmatter.
     pub frontmatter: Frontmatter,
 
-    /// Raw frontmatter YAML string
+    /// Raw frontmatter YAML string.
     pub frontmatter_raw: String,
 
-    /// Markdown body content
+    /// Markdown body content.
     pub body: String,
 
-    /// Line number where body starts
+    /// Line number where body starts.
     pub body_start_line: usize,
 }
 
+/// Errors that can occur when parsing a manifest.
 #[derive(Debug, Error)]
 pub enum ManifestError {
+    /// The SKILL.md file is missing the YAML frontmatter delimiter.
     #[error("SKILL.md must start with YAML frontmatter (---)")]
     MissingFrontmatter,
 
+    /// The YAML frontmatter is not properly closed.
     #[error("Frontmatter is not closed (missing closing ---)")]
     UnclosedFrontmatter,
 
+    /// The YAML frontmatter contains invalid YAML.
     #[error("Invalid YAML in frontmatter: {0}")]
     InvalidYaml(#[from] serde_yaml::Error),
 
+    /// An I/O error occurred while reading the file.
     #[error("IO error reading {path}: {source}")]
     Io {
+        /// The path that failed to read.
         path: PathBuf,
+        /// The underlying I/O error.
         #[source]
         source: std::io::Error,
     },
 }
 
 impl Manifest {
-    /// Parse a SKILL.md file
+    /// Parse a SKILL.md file.
     pub fn parse(path: PathBuf) -> Result<Self, ManifestError> {
         let content = std::fs::read_to_string(&path).map_err(|e| ManifestError::Io {
             path: path.clone(),
@@ -50,7 +60,7 @@ impl Manifest {
         Self::parse_content(path, &content)
     }
 
-    /// Parse from string content
+    /// Parse from string content.
     pub fn parse_content(path: PathBuf, content: &str) -> Result<Self, ManifestError> {
         let (frontmatter_raw, body, body_start_line) = Self::split_content(content)?;
         let frontmatter: Frontmatter = serde_yaml::from_str(&frontmatter_raw)?;

@@ -1,12 +1,16 @@
+//! Human-readable text output formatter.
+
 use super::OutputFormatter;
 use crate::skill::ValidationResult;
 use colored::Colorize;
 
+/// Formatter that outputs human-readable text.
 pub struct TextFormatter {
     quiet: bool,
 }
 
 impl TextFormatter {
+    /// Create a new text formatter.
     pub fn new(quiet: bool) -> Self {
         Self { quiet }
     }

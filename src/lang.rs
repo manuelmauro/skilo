@@ -1,6 +1,9 @@
+//! Script language utilities.
+
 use crate::cli::ScriptLang;
 
 impl ScriptLang {
+    /// Returns the file extension for this language.
     pub fn extension(&self) -> &'static str {
         match self {
             Self::Python => "py",
@@ -10,6 +13,7 @@ impl ScriptLang {
         }
     }
 
+    /// Returns the shebang line for this language.
     pub fn shebang(&self) -> &'static str {
         match self {
             Self::Python => "#!/usr/bin/env python3",
@@ -19,6 +23,7 @@ impl ScriptLang {
         }
     }
 
+    /// Returns the comment prefix for this language.
     pub fn comment_prefix(&self) -> &'static str {
         match self {
             Self::Python => "#",
@@ -28,6 +33,7 @@ impl ScriptLang {
         }
     }
 
+    /// Returns the file name with the appropriate extension.
     pub fn file_name(&self, name: &str) -> String {
         format!("{}.{}", name, self.extension())
     }

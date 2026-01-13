@@ -11,6 +11,9 @@ repository = "https://github.com/manuelmauro/skilo"
 homepage = "https://github.com/manuelmauro/skilo"
 readme = "README.md"
 
+[lints.rust]
+missing_docs = "deny"
+
 [dependencies]
 # CLI
 clap = { version = "4", features = ["derive", "env", "wrap_help"] }

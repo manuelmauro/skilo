@@ -1,12 +1,16 @@
+//! JSON output formatter.
+
 use super::OutputFormatter;
 use crate::skill::{Diagnostic, ValidationResult};
 use serde::Serialize;
 
+/// Formatter that outputs JSON.
 pub struct JsonFormatter {
     quiet: bool,
 }
 
 impl JsonFormatter {
+    /// Create a new JSON formatter.
     pub fn new(quiet: bool) -> Self {
         Self { quiet }
     }

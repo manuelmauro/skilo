@@ -1,8 +1,12 @@
+//! Creates a complete skill structure with scripts, references,
+//! and assets directories, suitable for feature-rich skills.
+
 use super::{to_title_case, SkillTemplate, TemplateContext};
 use crate::cli::ScriptLang;
 use std::fs;
 use std::path::Path;
 
+/// Template that creates a full skill with all directories and example files.
 pub struct FullTemplate;
 
 impl SkillTemplate for FullTemplate {
@@ -51,6 +55,7 @@ impl SkillTemplate for FullTemplate {
 }
 
 impl FullTemplate {
+    /// Render the SKILL.md content for a full skill.
     fn render_skill_md(&self, ctx: &TemplateContext) -> String {
         let mut frontmatter = format!(
             "---\nname: {}\ndescription: {}\n",
@@ -95,6 +100,7 @@ Static assets are stored in the `assets/` directory.
         frontmatter + &body
     }
 
+    /// Render the main script content for the selected language.
     fn render_script(&self, ctx: &TemplateContext) -> String {
         match ctx.lang {
             ScriptLang::Python => format!(
@@ -195,6 +201,7 @@ console.log("Hello from {}!");
         }
     }
 
+    /// Render the reference documentation content.
     fn render_reference(&self, ctx: &TemplateContext) -> String {
         let title = to_title_case(&ctx.name);
         format!(

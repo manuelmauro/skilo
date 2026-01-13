@@ -1,8 +1,10 @@
+//! Validates script files: executable permissions and shebang lines.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 
-/// W002: Warns if scripts are not executable
+/// W002: Warns if scripts are not executable.
 pub struct ScriptExecutableRule;
 
 impl Rule for ScriptExecutableRule {

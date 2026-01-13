@@ -1,13 +1,17 @@
+//! Validates the length of the compatibility field in frontmatter.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 
-/// E006: Validates compatibility field length
+/// E006: Validates compatibility field length.
 pub struct CompatibilityLengthRule {
+    /// Maximum allowed compatibility string length.
     max_length: usize,
 }
 
 impl CompatibilityLengthRule {
+    /// Create a new compatibility length rule with the specified maximum.
     pub fn new(max_length: usize) -> Self {
         Self { max_length }
     }

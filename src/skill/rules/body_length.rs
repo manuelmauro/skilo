@@ -1,13 +1,17 @@
+//! Warns when the skill body exceeds a recommended line count.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 
-/// W001: Warns if body exceeds max_body_lines
+/// W001: Warns if body exceeds max_body_lines.
 pub struct BodyLengthRule {
+    /// Maximum recommended body lines.
     max_lines: usize,
 }
 
 impl BodyLengthRule {
+    /// Create a new body length rule with the specified maximum lines.
     pub fn new(max_lines: usize) -> Self {
         Self { max_lines }
     }

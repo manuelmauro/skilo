@@ -1,8 +1,12 @@
+//! Creates a skill with a simple greeting script, suitable for
+//! getting started with Agent Skills development.
+
 use super::{to_title_case, SkillTemplate, TemplateContext};
 use crate::cli::ScriptLang;
 use std::fs;
 use std::path::Path;
 
+/// Template that creates a hello world skill with a greeting script.
 pub struct HelloWorldTemplate;
 
 impl SkillTemplate for HelloWorldTemplate {
@@ -40,6 +44,7 @@ impl SkillTemplate for HelloWorldTemplate {
 }
 
 impl HelloWorldTemplate {
+    /// Render the SKILL.md content for a hello world skill.
     fn render_skill_md(&self, ctx: &TemplateContext) -> String {
         let mut frontmatter = format!(
             "---\nname: {}\ndescription: {}\n",
@@ -83,6 +88,7 @@ Run the greeting script to display a personalized message.
         frontmatter + &body
     }
 
+    /// Render the greeting script content for the selected language.
     fn render_script(&self, ctx: &TemplateContext) -> String {
         match ctx.lang {
             ScriptLang::Python => format!(

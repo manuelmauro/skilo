@@ -1,3 +1,8 @@
+//! Skilo - CLI tool for Agent Skills development.
+//!
+//! This crate provides tools for creating, validating, and formatting
+//! [Agent Skills](https://agentskills.io/specification).
+
 pub mod cli;
 pub mod commands;
 pub mod config;

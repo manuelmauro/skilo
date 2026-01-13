@@ -1,3 +1,5 @@
+//! Skilo CLI binary.
+
 use clap::Parser;
 use miette::Result;
 use skilo::cli::{Cli, Command};

@@ -1,3 +1,5 @@
+//! Formats SKILL.md files with consistent YAML frontmatter and table alignment.
+
 use crate::cli::{Cli, FmtArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
@@ -5,6 +7,9 @@ use crate::output::get_formatter;
 use crate::skill::{Discovery, Formatter, FormatterConfig, Manifest};
 use colored::Colorize;
 
+/// Run the format command.
+///
+/// Formats skills in place, shows diff, or checks formatting depending on args.
 pub fn run(args: FmtArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     let output_formatter = get_formatter(cli.format, cli.quiet);
     let skill_formatter = Formatter::new(FormatterConfig::from(&config.fmt));
@@ -97,6 +102,7 @@ pub fn run(args: FmtArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError>
     }
 }
 
+/// Print a simple line-by-line diff between two strings.
 fn print_diff(old: &str, new: &str) {
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();

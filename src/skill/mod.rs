@@ -1,3 +1,11 @@
+//! Skill parsing, validation, and formatting.
+//!
+//! This module provides types for working with Agent Skills:
+//! - [`Manifest`] - Parse SKILL.md files
+//! - [`Frontmatter`] - Skill metadata (name, description, etc.)
+//! - [`Discovery`] - Find skills in directories
+//! - [`Validator`] - Validate skills against the specification
+
 pub mod discovery;
 pub mod formatter;
 pub mod frontmatter;

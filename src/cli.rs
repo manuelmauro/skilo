@@ -1,11 +1,15 @@
+//! Command-line interface definitions.
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
+/// Main CLI application.
 #[derive(Parser)]
 #[command(name = "skilo")]
 #[command(author, version, about = "CLI tool for Agent Skills development", long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
+    /// The subcommand to run.
     #[command(subcommand)]
     pub command: Command,
 
@@ -22,6 +26,7 @@ pub struct Cli {
     pub quiet: bool,
 }
 
+/// Available CLI commands.
 #[derive(Subcommand)]
 pub enum Command {
     /// Create a new skill from a template
@@ -63,6 +68,7 @@ pub enum Command {
     ToPrompt(ToPromptArgs),
 }
 
+/// Arguments for the `new` command.
 #[derive(clap::Args, Clone)]
 pub struct NewArgs {
     /// Name of the skill to create
@@ -97,6 +103,7 @@ pub struct NewArgs {
     pub output: Option<PathBuf>,
 }
 
+/// Arguments for the `lint` command.
 #[derive(clap::Args, Clone)]
 pub struct LintArgs {
     /// Path to skill or directory containing skills
@@ -112,6 +119,7 @@ pub struct LintArgs {
     pub fix: bool,
 }
 
+/// Arguments for the `fmt` command.
 #[derive(clap::Args, Clone)]
 pub struct FmtArgs {
     /// Path to skill or directory containing skills
@@ -127,6 +135,7 @@ pub struct FmtArgs {
     pub diff: bool,
 }
 
+/// Arguments for the `check` command.
 #[derive(clap::Args, Clone)]
 pub struct CheckArgs {
     /// Path to skill or directory containing skills
@@ -134,6 +143,7 @@ pub struct CheckArgs {
     pub path: PathBuf,
 }
 
+/// Arguments for the `read-properties` command.
 #[derive(clap::Args, Clone)]
 pub struct ReadPropertiesArgs {
     /// Paths to skills or directories containing skills
@@ -141,6 +151,7 @@ pub struct ReadPropertiesArgs {
     pub paths: Vec<PathBuf>,
 }
 
+/// Arguments for the `to-prompt` command.
 #[derive(clap::Args, Clone)]
 pub struct ToPromptArgs {
     /// Paths to skills or directories containing skills
@@ -148,29 +159,43 @@ pub struct ToPromptArgs {
     pub paths: Vec<PathBuf>,
 }
 
+/// Output format for command results.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum OutputFormat {
+    /// Human-readable text output.
     #[default]
     Text,
+    /// JSON output.
     Json,
+    /// SARIF output for code scanning integrations.
     Sarif,
 }
 
+/// Available skill templates.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 #[value(rename_all = "kebab-case")]
 pub enum Template {
+    /// Minimal working skill with a greeting script.
     #[default]
     HelloWorld,
+    /// Bare-bones skill with only SKILL.md.
     Minimal,
+    /// Complete skill with all optional directories.
     Full,
+    /// Skill focused on script execution.
     ScriptBased,
 }
 
+/// Supported script languages.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum ScriptLang {
+    /// Python scripts.
     #[default]
     Python,
+    /// Bash scripts.
     Bash,
+    /// JavaScript scripts.
     Javascript,
+    /// TypeScript scripts.
     Typescript,
 }

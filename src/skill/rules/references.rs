@@ -1,9 +1,12 @@
+//! Validates that files referenced in the skill body actually exist.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+/// Pattern for detecting file references in backticks.
 static REF_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"`((?:scripts|references|assets)/[^`]+)`").unwrap());
 

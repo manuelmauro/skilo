@@ -1,7 +1,11 @@
+//! Creates a skill with only a SKILL.md file, suitable for simple
+//! prompt-only skills without scripts or additional resources.
+
 use super::{to_title_case, SkillTemplate, TemplateContext};
 use std::fs;
 use std::path::Path;
 
+/// Template that creates a minimal skill with only a SKILL.md file.
 pub struct MinimalTemplate;
 
 impl SkillTemplate for MinimalTemplate {
@@ -18,6 +22,7 @@ impl SkillTemplate for MinimalTemplate {
 }
 
 impl MinimalTemplate {
+    /// Render the SKILL.md content for a minimal skill.
     fn render_skill_md(&self, ctx: &TemplateContext) -> String {
         let mut frontmatter = format!(
             "---\nname: {}\ndescription: {}\n",

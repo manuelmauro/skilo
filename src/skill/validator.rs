@@ -1,3 +1,5 @@
+//! Skill validation.
+
 use crate::config::LintConfig;
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::{
@@ -6,55 +8,80 @@ use crate::skill::rules::{
     ScriptExecutableRule, ScriptShebangRule,
 };
 
+/// Result of validating a skill.
 #[derive(Debug, Default)]
 pub struct ValidationResult {
+    /// Validation errors.
     pub errors: Vec<Diagnostic>,
+    /// Validation warnings.
     pub warnings: Vec<Diagnostic>,
 }
 
 impl ValidationResult {
+    /// Returns true if there are no errors.
     pub fn is_ok(&self) -> bool {
         self.errors.is_empty()
     }
 
+    /// Returns true if there are no errors or warnings.
     pub fn is_ok_strict(&self) -> bool {
         self.errors.is_empty() && self.warnings.is_empty()
     }
 
+    /// Merge another result into this one.
     pub fn merge(&mut self, other: ValidationResult) {
         self.errors.extend(other.errors);
         self.warnings.extend(other.warnings);
     }
 }
 
+/// A validation diagnostic (error or warning).
 #[derive(Debug, Clone)]
 pub struct Diagnostic {
+    /// Path to the file with the issue.
     pub path: String,
+    /// Line number (if applicable).
     pub line: Option<usize>,
+    /// Column number (if applicable).
     pub column: Option<usize>,
+    /// Human-readable message.
     pub message: String,
+    /// Diagnostic code.
     pub code: DiagnosticCode,
+    /// Optional hint for fixing the issue.
     pub fix_hint: Option<String>,
 }
 
+/// Diagnostic codes for validation issues.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DiagnosticCode {
-    // Errors
-    E001, // Invalid name format
-    E002, // Name too long
-    E003, // Name mismatch with directory
-    E004, // Missing description
-    E005, // Description too long
-    E006, // Compatibility too long
-    E007, // Invalid YAML
-    E008, // Missing SKILL.md
-    E009, // Referenced file not found
+    /// Invalid name format.
+    E001,
+    /// Name too long.
+    E002,
+    /// Name mismatch with directory.
+    E003,
+    /// Missing description.
+    E004,
+    /// Description too long.
+    E005,
+    /// Compatibility too long.
+    E006,
+    /// Invalid YAML.
+    E007,
+    /// Missing SKILL.md.
+    E008,
+    /// Referenced file not found.
+    E009,
 
-    // Warnings
-    W001, // Body exceeds max lines
-    W002, // Script not executable
-    W003, // Script missing shebang
-    W004, // Empty optional directory
+    /// Body exceeds max lines.
+    W001,
+    /// Script not executable.
+    W002,
+    /// Script missing shebang.
+    W003,
+    /// Empty optional directory.
+    W004,
 }
 
 impl std::fmt::Display for DiagnosticCode {
@@ -78,6 +105,7 @@ impl std::fmt::Display for DiagnosticCode {
 }
 
 impl DiagnosticCode {
+    /// Returns true if this is an error (not a warning).
     pub fn is_error(&self) -> bool {
         matches!(
             self,
@@ -94,6 +122,7 @@ impl DiagnosticCode {
     }
 }
 
+/// Skill validator with configurable rules.
 pub struct Validator {
     rules: Vec<Box<dyn Rule>>,
 }
@@ -105,6 +134,7 @@ impl Default for Validator {
 }
 
 impl Validator {
+    /// Create a new validator with the given configuration.
     pub fn new(config: &LintConfig) -> Self {
         let mut rules: Vec<Box<dyn Rule>> = Vec::new();
 
@@ -142,6 +172,7 @@ impl Validator {
         Self { rules }
     }
 
+    /// Validate a skill manifest.
     pub fn validate(&self, manifest: &Manifest) -> ValidationResult {
         let mut result = ValidationResult::default();
 

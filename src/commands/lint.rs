@@ -1,9 +1,14 @@
+//! Validates skills against the Agent Skills specification rules.
+
 use crate::cli::{Cli, LintArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
 use crate::output::get_formatter;
 use crate::skill::{Discovery, Manifest, ValidationResult, Validator};
 
+/// Run the lint command.
+///
+/// Validates all discovered skills and outputs diagnostics.
 pub fn run(args: LintArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     let formatter = get_formatter(cli.format, cli.quiet);
     let strict = args.strict || config.lint.strict;

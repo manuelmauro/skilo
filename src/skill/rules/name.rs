@@ -1,9 +1,12 @@
+//! Validates skill names: format, length, and directory matching.
+
 use crate::skill::manifest::Manifest;
 use crate::skill::rules::Rule;
 use crate::skill::validator::{Diagnostic, DiagnosticCode};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+/// Pattern for valid skill names: lowercase alphanumeric with single hyphens.
 static NAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
 
 /// E001: Validates name format (lowercase alphanumeric + single hyphens)
@@ -35,12 +38,14 @@ impl Rule for NameFormatRule {
     }
 }
 
-/// E002: Validates name length
+/// E002: Validates name length.
 pub struct NameLengthRule {
+    /// Maximum allowed name length.
     max_length: usize,
 }
 
 impl NameLengthRule {
+    /// Create a new name length rule with the specified maximum.
     pub fn new(max_length: usize) -> Self {
         Self { max_length }
     }

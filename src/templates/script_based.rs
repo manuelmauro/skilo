@@ -1,8 +1,12 @@
+//! Creates a skill focused on multiple scripts with setup, run,
+//! and cleanup phases, suitable for automation tasks.
+
 use super::{to_title_case, SkillTemplate, TemplateContext};
 use crate::cli::ScriptLang;
 use std::fs;
 use std::path::Path;
 
+/// Template that creates a script-focused skill with setup, run, and cleanup scripts.
 pub struct ScriptBasedTemplate;
 
 impl SkillTemplate for ScriptBasedTemplate {
@@ -37,6 +41,7 @@ impl SkillTemplate for ScriptBasedTemplate {
 }
 
 impl ScriptBasedTemplate {
+    /// Render the SKILL.md content for a script-based skill.
     fn render_skill_md(&self, ctx: &TemplateContext) -> String {
         let mut frontmatter = format!(
             "---\nname: {}\ndescription: {}\n",
@@ -89,6 +94,7 @@ This skill provides the following scripts:
         frontmatter + &body
     }
 
+    /// Render all scripts (setup, run, cleanup) for the selected language.
     fn render_scripts(&self, ctx: &TemplateContext) -> Vec<(String, String)> {
         let ext = ctx.lang.extension();
         let shebang = ctx.lang.shebang();

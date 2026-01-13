@@ -1,8 +1,13 @@
+//! Runs both lint and format check in sequence.
+
 use crate::cli::{CheckArgs, Cli, FmtArgs, LintArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
 use crate::output::get_formatter;
 
+/// Run the check command, which executes lint and format check.
+///
+/// Returns 0 if all checks pass, 1 if any fail.
 pub fn run(args: CheckArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     let formatter = get_formatter(cli.format, cli.quiet);
 

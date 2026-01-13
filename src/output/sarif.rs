@@ -1,12 +1,16 @@
+//! SARIF output formatter for code scanning integrations.
+
 use super::OutputFormatter;
 use crate::skill::{DiagnosticCode, ValidationResult};
 use serde::Serialize;
 
+/// Formatter that outputs SARIF (Static Analysis Results Interchange Format).
 pub struct SarifFormatter {
     quiet: bool,
 }
 
 impl SarifFormatter {
+    /// Create a new SARIF formatter.
     pub fn new(quiet: bool) -> Self {
         Self { quiet }
     }

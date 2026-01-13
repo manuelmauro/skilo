@@ -1,3 +1,5 @@
+//! Creates new skills from templates.
+
 use crate::cli::{Cli, NewArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
@@ -6,8 +8,12 @@ use crate::templates::{get_template, TemplateContext};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+/// Pattern for valid skill names.
 static NAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
 
+/// Run the new command.
+///
+/// Creates a new skill from the specified template.
 pub fn run(args: NewArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     let formatter = get_formatter(cli.format, cli.quiet);
 
