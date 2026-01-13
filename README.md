@@ -1,5 +1,8 @@
 # skilo
 
+[![CI](https://github.com/manuelmauro/skilo/actions/workflows/ci.yml/badge.svg)](https://github.com/manuelmauro/skilo/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/skilo.svg)](https://crates.io/crates/skilo)
+
 A CLI tool for [Agent Skills](https://agentskills.io/specification) development.
 
 ## Using the Skilo Skill
