@@ -1,0 +1,35 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude/skills/**'
+      - '.skilorc.toml'
+      - '.github/workflows/skills.yml'
+  pull_request:
+    paths:
+      - '.claude/skills/**'
+      - '.skilorc.toml'
+      - '.github/workflows/skills.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install skilo from repo
+        run: cargo install --path .
+
+      - name: Lint skills
+        run: skilo lint .claude/skills/
+
+      - name: Check formatting
+        run: skilo fmt --check .claude/skills/

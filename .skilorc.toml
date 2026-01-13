@@ -1,0 +1,27 @@
+# Skilo configuration file
+# https://github.com/manuelmauro/skilo
+
+[lint]
+strict = false
+
+[lint.rules]
+name_format = true
+name_length = 64
+name_directory = true
+description_required = true
+description_length = 1024
+compatibility_length = 500
+references_exist = true
+body_length = 500
+script_executable = true
+script_shebang = true
+
+[fmt]
+sort_frontmatter = true
+indent_size = 2
+format_tables = true
+
+[new]
+default_license = "MIT"
+default_template = "hello-world"
+default_lang = "bash"
