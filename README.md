@@ -2,6 +2,32 @@
 
 A CLI tool for [Agent Skills](https://agentskills.io/specification) development.
 
+## Using the Skilo Skill
+
+Skilo includes a skill that teaches AI coding assistants how to use the CLI. Add it to your project to enable your assistant to create and validate skills:
+
+```bash
+# Create the skills directory
+mkdir -p .claude/skills
+
+# Copy the use-skilo skill from the skilo repository
+curl -fsSL https://raw.githubusercontent.com/manuelmauro/skilo/main/.claude/skills/use-skilo/SKILL.md \
+  -o .claude/skills/use-skilo/SKILL.md --create-dirs
+```
+
+Or clone and copy manually:
+
+```bash
+git clone https://github.com/manuelmauro/skilo.git /tmp/skilo
+cp -r /tmp/skilo/.claude/skills/use-skilo .claude/skills/
+```
+
+Once installed, your AI assistant will be able to:
+- Create new skills using `skilo new`
+- Validate skills with `skilo lint`
+- Format SKILL.md files with `skilo fmt`
+- Set up CI workflows for skill validation
+
 ## Installation
 
 ### From source
