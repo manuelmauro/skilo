@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-13
+
+### Changed
+
+- Refactored validator to use pluggable rule architecture
+
+### Added
+
+- Configurable lint rules via `[lint.rules]` in `.skilorc.toml`
+- Rules can be set to `true` (default), `false` (disabled), or a number (custom threshold)
+- Threshold-based rules with configurable limits:
+  - `name_length` (E002) - default 64
+  - `description_length` (E005) - default 1024
+  - `compatibility_length` (E006) - default 500
+  - `body_length` (W001) - default 500
+- Boolean rules:
+  - `name_format` (E001), `name_directory` (E003)
+  - `description_required` (E004), `references_exist` (E009)
+  - `script_executable` (W002), `script_shebang` (W003)
+
 ## [0.2.0] - 2026-01-13
 
 ### Changed
@@ -12,18 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed project from `skillz` to `skilo`
 - Renamed `SkillzError` to `SkiloError`
 - Renamed `SKILLZ_CONFIG` environment variable to `SKILO_CONFIG`
-- Refactored validator to use pluggable rule architecture
 
 ### Added
 
 - Table formatting support in output
-- Configurable lint rules via `[lint.rules]` in `.skilorc.toml`
-- Individual rules can now be enabled/disabled:
-  - `name_format` (E001), `name_length` (E002), `name_directory` (E003)
-  - `description_required` (E004), `description_length` (E005)
-  - `compatibility_length` (E006), `references_exist` (E009)
-  - `body_length` (W001) - set to number for threshold or `false` to disable
-  - `script_executable` (W002), `script_shebang` (W003)
 
 ## [0.1.0] - Initial Release
 

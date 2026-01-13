@@ -191,7 +191,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install skilo
-        run: cargo install skilo@0.2.0
+        run: cargo install skilo@0.3.0
 
       - name: Lint skills
         run: skilo lint . --strict
