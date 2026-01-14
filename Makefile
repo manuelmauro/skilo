@@ -1,15 +1,14 @@
-.PHONY: setup
+.PHONY: setup clean fmt-check fmt clippy clippy-release check check-release build build-release test test-release install lint skill-fmt new-skill ci doc help
+
 # Setup development environment
 setup:
 	rustup component add rustfmt clippy
 	cargo fetch
 
-.PHONY: clean
 # Cleanup compilation outputs
 clean:
 	cargo clean
 
-.PHONY: fmt-check fmt
 # Check the code format
 fmt-check:
 	cargo fmt --all -- --check
@@ -17,7 +16,6 @@ fmt-check:
 fmt:
 	cargo fmt --all
 
-.PHONY: clippy clippy-release
 # Run rust clippy with debug profile
 clippy:
 	cargo clippy --all --all-targets -- -D warnings
@@ -25,7 +23,6 @@ clippy:
 clippy-release:
 	cargo clippy --release --all --all-targets -- -D warnings
 
-.PHONY: check check-release
 # Check code with debug profile
 check:
 	cargo check
@@ -33,7 +30,6 @@ check:
 check-release:
 	cargo check --release
 
-.PHONY: build build-release
 # Build all binaries with debug profile
 build:
 	cargo build
@@ -41,7 +37,6 @@ build:
 build-release:
 	cargo build --release
 
-.PHONY: test test-release
 # Run all unit tests with debug profile
 test:
 	cargo test --all
@@ -49,36 +44,29 @@ test:
 test-release:
 	cargo test --release --all
 
-.PHONY: install
 # Install the binary locally
 install:
 	cargo install --path .
 
-.PHONY: lint
 # Run skilo lint on skills
 lint:
 	cargo run -- lint .
 
-.PHONY: skill-fmt
 # Format skills
 skill-fmt:
 	cargo run -- fmt .
 
-.PHONY: new-skill
 # Create a new test skill (usage: make new-skill NAME=my-skill LANG=python)
 new-skill:
 	cargo run -- new $(NAME) --lang $(or $(LANG),python)
 
-.PHONY: ci
 # Run all CI checks (fmt, clippy, test, build, lint, skill-fmt)
 ci: fmt clippy test build lint skill-fmt
 
-.PHONY: doc
 # Generate documentation
 doc:
 	cargo doc --no-deps --open
 
-.PHONY: help
 # Show help
 help:
 	@echo ''
