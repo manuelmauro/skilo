@@ -13,7 +13,7 @@ Steps to prepare a new skilo release.
 2. No Clippy warnings
 3. Update version in `Cargo.toml`
 4. Update `CHANGELOG.md`
-5. Update version in `README.md` CI example
+5. Find and update version references in docs
 6. Commit changes
 7. Create git tag
 
@@ -42,6 +42,21 @@ Follow [Keep a Changelog](https://keepachangelog.com/) format:
 ### Fixed
 - Bug fixes
 ```
+
+## Update Version References in Docs
+
+Search for hardcoded version numbers in documentation and update them:
+
+```bash
+# Find version references (e.g., skilo@0.3.0, v0.3.0)
+rg "skilo@\d+\.\d+\.\d+" --type md
+rg "v\d+\.\d+\.\d+" README.md
+```
+
+Common locations:
+- `README.md` - CI example (`cargo install skilo@X.Y.Z`)
+- Installation instructions
+- Badge URLs
 
 ## Release Commands
 
