@@ -12,10 +12,11 @@ Steps to prepare a new skilo release.
 1. All tests pass
 2. No Clippy warnings
 3. Update version in `Cargo.toml`
-4. Update `CHANGELOG.md`
-5. Find and update version references in docs
-6. Commit changes
-7. Create git tag
+4. Update `Cargo.lock`
+5. Update `CHANGELOG.md`
+6. Find and update version references in docs
+7. Commit changes (including `Cargo.lock`)
+8. Create git tag
 
 ## Version Bump
 
@@ -24,6 +25,12 @@ Update version in `Cargo.toml`:
 ```toml
 [package]
 version = "X.Y.Z"
+```
+
+After updating `Cargo.toml`, run `cargo check` to update `Cargo.lock`:
+
+```bash
+cargo check
 ```
 
 ## Changelog Format
