@@ -1,5 +1,7 @@
 //! Command implementations.
 
+/// The `add` command implementation.
+pub mod add;
 /// The `check` command implementation.
 pub mod check;
 /// The `fmt` command implementation.

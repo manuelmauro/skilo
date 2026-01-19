@@ -13,6 +13,7 @@ fn main() -> Result<()> {
         .map_err(|e| miette::miette!("Failed to load config: {}", e))?;
 
     let exit_code = match &cli.command {
+        Command::Add(args) => commands::add::run(args.clone(), &config, &cli)?,
         Command::New(args) => commands::new::run(args.clone(), &config, &cli)?,
         Command::Lint(args) => commands::lint::run(args.clone(), &config, &cli)?,
         Command::Fmt(args) => commands::fmt::run(args.clone(), &config, &cli)?,

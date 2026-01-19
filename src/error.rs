@@ -55,6 +55,40 @@ pub enum SkiloError {
     #[error("IO error: {0}")]
     #[diagnostic(code(skilo::io))]
     Io(#[from] std::io::Error),
+
+    /// Invalid source format for the add command.
+    #[error("Invalid source format: {0}. {1}")]
+    #[diagnostic(code(skilo::invalid_source))]
+    InvalidSource(String, String),
+
+    /// Git operation failed.
+    #[error("Git error: {message}")]
+    #[diagnostic(code(skilo::git))]
+    Git {
+        /// The error message.
+        message: String,
+    },
+
+    /// Repository not found.
+    #[error("Repository not found: {url}")]
+    #[diagnostic(code(skilo::repo_not_found))]
+    RepoNotFound {
+        /// The repository URL.
+        url: String,
+    },
+
+    /// Network error.
+    #[error("Network error: {message}")]
+    #[diagnostic(code(skilo::network))]
+    Network {
+        /// The error message.
+        message: String,
+    },
+
+    /// User cancelled the operation.
+    #[error("Operation cancelled by user")]
+    #[diagnostic(code(skilo::cancelled))]
+    Cancelled,
 }
 
 /// A specialized Result type for skilo operations.

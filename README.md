@@ -5,34 +5,6 @@
 
 A CLI tool for [Agent Skills](https://agentskills.io/specification) development.
 
-## Using the Skilo Skill
-
-Skilo includes a skill that teaches AI coding assistants how to use the CLI. Add it to your project to enable your assistant to create and validate skills:
-
-```bash
-# Create the skills directory
-mkdir -p .claude/skills
-
-# Copy the use-skilo skill from the skilo repository
-curl -fsSL https://raw.githubusercontent.com/manuelmauro/skilo/main/.claude/skills/use-skilo/SKILL.md \
-  -o .claude/skills/use-skilo/SKILL.md --create-dirs
-```
-
-Or clone and copy manually:
-
-```bash
-git clone https://github.com/manuelmauro/skilo.git /tmp/skilo
-cp -r /tmp/skilo/.claude/skills/use-skilo .claude/skills/
-```
-
-Once installed, your AI assistant will be able to:
-- Create new skills using `skilo new`
-- Validate skills with `skilo lint`
-- Format SKILL.md files with `skilo fmt`
-- Extract skill metadata with `skilo read-properties`
-- Generate agent prompts with `skilo to-prompt`
-- Set up CI workflows for skill validation
-
 ## Installation
 
 ### From source
@@ -49,11 +21,76 @@ make install
 cargo install --path .
 ```
 
+## Using the Skilo Skill
+
+Skilo includes a skill that teaches AI coding assistants how to use the CLI. Add it to your project to enable your assistant to create and validate skills:
+
+```bash
+# Install using skilo add
+skilo add manuelmauro/skilo --skill use-skilo
+```
+
+Or manually with curl:
+
+```bash
+mkdir -p .claude/skills
+curl -fsSL https://raw.githubusercontent.com/manuelmauro/skilo/main/.claude/skills/use-skilo/SKILL.md \
+  -o .claude/skills/use-skilo/SKILL.md --create-dirs
+```
+
+Once installed, your AI assistant will be able to:
+- Install skills from repositories using `skilo add`
+- Create new skills using `skilo new`
+- Validate skills with `skilo lint`
+- Format SKILL.md files with `skilo fmt`
+- Extract skill metadata with `skilo read-properties`
+- Generate agent prompts with `skilo to-prompt`
+- Set up CI workflows for skill validation
+
 ### Requirements
 
 - Rust 1.92.0 (pinned in `rust-toolchain.toml`)
 
 ## Usage
+
+### Install skills from repositories
+
+```bash
+# Install all skills from a GitHub repository
+skilo add anthropics/skills
+
+# Install a specific skill by name
+skilo add vercel-labs/agent-skills --skill code-review
+
+# Install multiple specific skills
+skilo add owner/repo --skill lint-fix --skill test-runner
+
+# List available skills without installing
+skilo add anthropics/skills --list
+
+# Install from a specific branch
+skilo add owner/repo --branch develop
+
+# Install from a specific tag
+skilo add owner/repo --tag v1.0.0
+
+# Non-interactive installation (for CI)
+skilo add anthropics/skills --skill lint-fix --yes
+
+# Install from a full URL
+skilo add https://github.com/owner/repo
+
+# Install from a direct skill path
+skilo add https://github.com/owner/repo/tree/main/skills/my-skill
+
+# Install from SSH URL
+skilo add git@github.com:owner/repo.git
+
+# Install from local path
+skilo add ./path/to/skills
+```
+
+Skills are installed to `.claude/skills/<skill-name>/` by default.
 
 ### Create a new skill
 
@@ -225,6 +262,11 @@ format_tables = true
 default_license = "MIT"
 default_template = "hello-world"
 default_lang = "python"
+
+[add]
+default_agent = "claude"  # See supported agents below
+confirm = true            # Prompt before installing (false for CI)
+validate = true           # Validate skills before installing
 ```
 
 ### Configuring Rules
@@ -239,6 +281,27 @@ name_length = 128            # Custom max name length
 description_length = false   # Disable description length check
 body_length = 1000           # Custom max body lines
 ```
+
+### Supported Agents
+
+The `default_agent` option supports the following AI coding assistants:
+
+| Agent          | Config Value  | Project Path        | Global Path                     |
+| -------------- | ------------- | ------------------- | ------------------------------- |
+| Claude Code    | `claude`      | `.claude/skills/`   | `~/.claude/skills/`             |
+| OpenCode       | `open-code`   | `.opencode/skill/`  | `~/.config/opencode/skill/`     |
+| Codex          | `codex`       | `.codex/skills/`    | `~/.codex/skills/`              |
+| Cursor         | `cursor`      | `.cursor/skills/`   | `~/.cursor/skills/`             |
+| Amp            | `amp`         | `.agents/skills/`   | `~/.config/agents/skills/`      |
+| Kilo Code      | `kilo-code`   | `.kilocode/skills/` | `~/.kilocode/skills/`           |
+| Roo Code       | `roo-code`    | `.roo/skills/`      | `~/.roo/skills/`                |
+| Goose          | `goose`       | `.goose/skills/`    | `~/.config/goose/skills/`       |
+| Gemini CLI     | `gemini`      | `.gemini/skills/`   | `~/.gemini/skills/`             |
+| Antigravity    | `antigravity` | `.agent/skills/`    | `~/.gemini/antigravity/skills/` |
+| GitHub Copilot | `copilot`     | `.github/skills/`   | `~/.copilot/skills/`            |
+| Clawdbot       | `clawdbot`    | `skills/`           | `~/.clawdbot/skills/`           |
+| Droid          | `droid`       | `.factory/skills/`  | `~/.factory/skills/`            |
+| Windsurf       | `windsurf`    | `.windsurf/skills/` | `~/.codeium/windsurf/skills/`   |
 
 ## CI Integration
 

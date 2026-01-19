@@ -29,6 +29,16 @@ pub struct Cli {
 /// Available CLI commands.
 #[derive(Subcommand)]
 pub enum Command {
+    /// Install skills from a git repository or local path
+    ///
+    /// Supports various source formats:
+    ///   owner/repo                     GitHub shorthand
+    ///   `https://github.com/owner/repo`  Full URL
+    ///   git@github.com:owner/repo.git  SSH URL
+    ///   ./path/to/skills               Local path
+    #[command(verbatim_doc_comment)]
+    Add(AddArgs),
+
     /// Create a new skill from a template
     New(NewArgs),
 
@@ -66,6 +76,33 @@ pub enum Command {
     /// and file locations.
     #[command(verbatim_doc_comment)]
     ToPrompt(ToPromptArgs),
+}
+
+/// Arguments for the `add` command.
+#[derive(clap::Args, Clone)]
+pub struct AddArgs {
+    /// Source to install skills from (e.g., owner/repo, URL, or path)
+    pub source: String,
+
+    /// Install specific skill(s) by name
+    #[arg(long, short)]
+    pub skill: Option<Vec<String>>,
+
+    /// List available skills without installing
+    #[arg(long, short)]
+    pub list: bool,
+
+    /// Skip confirmation prompts
+    #[arg(long, short)]
+    pub yes: bool,
+
+    /// Specify git branch
+    #[arg(long, short)]
+    pub branch: Option<String>,
+
+    /// Specify git tag
+    #[arg(long, short = 't')]
+    pub tag: Option<String>,
 }
 
 /// Arguments for the `new` command.

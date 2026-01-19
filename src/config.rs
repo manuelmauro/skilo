@@ -1,5 +1,6 @@
 //! Configuration file handling.
 
+use crate::agent::Agent;
 use serde::{Deserialize, Deserializer};
 use std::path::PathBuf;
 
@@ -54,6 +55,8 @@ pub struct Config {
     pub fmt: FmtConfig,
     /// New command configuration.
     pub new: NewConfig,
+    /// Add command configuration.
+    pub add: AddConfig,
 }
 
 /// Configuration for the lint command.
@@ -153,6 +156,28 @@ impl Default for NewConfig {
             default_license: None,
             default_template: "hello-world".into(),
             default_lang: "python".into(),
+        }
+    }
+}
+
+/// Configuration for the add command.
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+pub struct AddConfig {
+    /// Target agent for skill installation.
+    pub default_agent: Agent,
+    /// Prompt before installing (false for CI).
+    pub confirm: bool,
+    /// Validate skills before installing.
+    pub validate: bool,
+}
+
+impl Default for AddConfig {
+    fn default() -> Self {
+        Self {
+            default_agent: Agent::default(),
+            confirm: true,
+            validate: true,
         }
     }
 }
