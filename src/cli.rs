@@ -76,6 +76,19 @@ pub enum Command {
     /// and file locations.
     #[command(verbatim_doc_comment)]
     ToPrompt(ToPromptArgs),
+
+    /// List installed skills
+    ///
+    /// Shows skills installed at project or global level.
+    #[command(verbatim_doc_comment)]
+    List(ListArgs),
+
+    /// List detected agents
+    ///
+    /// Shows AI coding agents detected in the current project or globally,
+    /// along with their skill counts and feature support.
+    #[command(verbatim_doc_comment)]
+    Agents(AgentsArgs),
 }
 
 /// Arguments for the `add` command.
@@ -104,18 +117,36 @@ pub struct AddArgs {
     #[arg(long, short = 't')]
     pub tag: Option<String>,
 
-    /// Target agent (determines install directory)
+    /// Target agent(s) (determines install directory)
+    ///
+    /// Can be specified multiple times: --agent claude --agent cursor
+    /// Use 'all' to install to all detected agents.
     #[arg(long, short, value_enum)]
-    pub agent: Option<Agent>,
+    pub agent: Option<Vec<Agent>>,
+
+    /// Install to global skills directory (~/.claude/skills/)
+    #[arg(long, short = 'g')]
+    pub global: bool,
 
     /// Custom output directory
-    #[arg(long, short, overrides_with = "agent")]
+    #[arg(long, short, conflicts_with_all = ["agent", "global"])]
     pub output: Option<std::path::PathBuf>,
 }
 
+/// Represents a CLI agent selection: either all agents or a specific one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentSelection {
+    /// All detected agents.
+    All,
+    /// A single specific agent.
+    Single(crate::agent::Agent),
+}
+
 /// Supported AI coding agents (CLI enum).
-#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+#[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Agent {
+    /// All detected agents
+    All,
     /// OpenCode
     OpenCode,
     /// Claude Code
@@ -146,23 +177,25 @@ pub enum Agent {
     Windsurf,
 }
 
-impl From<Agent> for crate::agent::Agent {
-    fn from(agent: Agent) -> Self {
-        match agent {
-            Agent::OpenCode => Self::OpenCode,
-            Agent::Claude => Self::Claude,
-            Agent::Codex => Self::Codex,
-            Agent::Cursor => Self::Cursor,
-            Agent::Amp => Self::Amp,
-            Agent::KiloCode => Self::KiloCode,
-            Agent::RooCode => Self::RooCode,
-            Agent::Goose => Self::Goose,
-            Agent::Gemini => Self::Gemini,
-            Agent::Antigravity => Self::Antigravity,
-            Agent::Copilot => Self::Copilot,
-            Agent::Clawdbot => Self::Clawdbot,
-            Agent::Droid => Self::Droid,
-            Agent::Windsurf => Self::Windsurf,
+impl Agent {
+    /// Convert to an agent selection.
+    pub fn to_selection(&self) -> AgentSelection {
+        match self {
+            Agent::All => AgentSelection::All,
+            Agent::OpenCode => AgentSelection::Single(crate::agent::Agent::OpenCode),
+            Agent::Claude => AgentSelection::Single(crate::agent::Agent::Claude),
+            Agent::Codex => AgentSelection::Single(crate::agent::Agent::Codex),
+            Agent::Cursor => AgentSelection::Single(crate::agent::Agent::Cursor),
+            Agent::Amp => AgentSelection::Single(crate::agent::Agent::Amp),
+            Agent::KiloCode => AgentSelection::Single(crate::agent::Agent::KiloCode),
+            Agent::RooCode => AgentSelection::Single(crate::agent::Agent::RooCode),
+            Agent::Goose => AgentSelection::Single(crate::agent::Agent::Goose),
+            Agent::Gemini => AgentSelection::Single(crate::agent::Agent::Gemini),
+            Agent::Antigravity => AgentSelection::Single(crate::agent::Agent::Antigravity),
+            Agent::Copilot => AgentSelection::Single(crate::agent::Agent::Copilot),
+            Agent::Clawdbot => AgentSelection::Single(crate::agent::Agent::Clawdbot),
+            Agent::Droid => AgentSelection::Single(crate::agent::Agent::Droid),
+            Agent::Windsurf => AgentSelection::Single(crate::agent::Agent::Windsurf),
         }
     }
 }
@@ -197,8 +230,16 @@ pub struct NewArgs {
     #[arg(long)]
     pub no_scripts: bool,
 
-    /// Output directory (defaults to current directory)
-    #[arg(long, short)]
+    /// Target agent (determines output directory)
+    #[arg(long, short, value_enum)]
+    pub agent: Option<Agent>,
+
+    /// Create skill in global skills directory
+    #[arg(long, short = 'g')]
+    pub global: bool,
+
+    /// Output directory (defaults to agent skills directory)
+    #[arg(long, short, conflicts_with_all = ["agent", "global"])]
     pub output: Option<PathBuf>,
 }
 
@@ -297,4 +338,32 @@ pub enum ScriptLang {
     Javascript,
     /// TypeScript scripts.
     Typescript,
+}
+
+/// Arguments for the `list` command.
+#[derive(clap::Args, Clone)]
+pub struct ListArgs {
+    /// Project directory to list skills from
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// List global skills only
+    #[arg(long, short = 'g')]
+    pub global: bool,
+
+    /// List all skills (project + global)
+    #[arg(long, conflicts_with = "global")]
+    pub all: bool,
+
+    /// Target agent
+    #[arg(long, short, value_enum)]
+    pub agent: Option<Agent>,
+}
+
+/// Arguments for the `agents` command.
+#[derive(clap::Args, Clone)]
+pub struct AgentsArgs {
+    /// Show verbose output (feature support matrix)
+    #[arg(long, short)]
+    pub verbose: bool,
 }

@@ -4,9 +4,11 @@ use crate::cli::{Cli, NewArgs};
 use crate::config::Config;
 use crate::error::SkiloError;
 use crate::output::get_formatter;
+use crate::scope::{ensure_skills_dir, Scope};
 use crate::templates::{get_template, TemplateContext};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::path::PathBuf;
 
 /// Pattern for valid skill names.
 static NAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
@@ -29,10 +31,8 @@ pub fn run(args: NewArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError>
         )));
     }
 
-    // Determine output directory
-    let output_dir = args
-        .output
-        .unwrap_or_else(|| std::env::current_dir().unwrap());
+    // Determine output directory based on --output, --agent, --global flags
+    let output_dir = resolve_output_dir(&args, config)?;
     let skill_dir = output_dir.join(&args.name);
 
     // Check if skill already exists
@@ -69,4 +69,35 @@ pub fn run(args: NewArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError>
     ));
 
     Ok(0)
+}
+
+/// Resolve the output directory based on CLI arguments.
+fn resolve_output_dir(args: &NewArgs, config: &Config) -> Result<PathBuf, SkiloError> {
+    let project_root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+
+    // If --output is specified, use it directly
+    if let Some(ref output) = args.output {
+        return Ok(output.clone());
+    }
+
+    // Determine scope
+    let scope = if args.global {
+        Scope::Global
+    } else {
+        Scope::Project
+    };
+
+    // Determine agent
+    let agent = if let Some(ref cli_agent) = args.agent {
+        match cli_agent.to_selection() {
+            crate::cli::AgentSelection::Single(a) => a,
+            crate::cli::AgentSelection::All => config.add.default_agent,
+        }
+    } else {
+        config.add.default_agent
+    };
+
+    // Ensure skills directory exists and return it
+    ensure_skills_dir(agent, scope, &project_root)
+        .map_err(|e| SkiloError::Config(format!("Failed to create skills directory: {}", e)))
 }

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Multi-agent support: install skills to multiple agents simultaneously
+  - `--agent all` to install to all detected agents
+  - Multiple `--agent` flags: `--agent claude --agent cursor`
+- Global installation support with `--global` / `-g` flag for `add`, `new`, and `list` commands
+- `list` command to show installed skills
+  - `skilo list` for project skills
+  - `skilo list --global` for global skills
+  - `skilo list --all` for both project and global
+  - `skilo list /path/to/project` to specify project directory
+- `agents` command to list detected AI coding agents
+  - Shows project and global agent installations
+  - `--verbose` flag for feature support matrix
+- Agent detection: automatically detect installed agents by checking for config directories
+- Agent feature matrix: track which agents support `context:fork`, hooks, `allowed-tools`
+- Compatibility warnings when installing skills with features not supported by target agent
+- New `scope` module for project/global path resolution
+- New configuration sections: `[agents]` and `[install]`
+
+### Dependencies
+
+- Added `dirs` for cross-platform home directory detection
+
 ## [0.5.0] - 2026-01-19
 
 ### Added

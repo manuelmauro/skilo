@@ -1,15 +1,18 @@
 //! The `add` command implementation for installing skills from git repositories.
 
+use crate::agent::{expand_tilde, Agent};
 use crate::cli::{AddArgs, Cli};
 use crate::config::Config;
 use crate::git::{fetch, Source};
 use crate::output::get_formatter;
+use crate::scope::Scope;
 use crate::skill::discovery::Discovery;
 use crate::skill::manifest::Manifest;
 use crate::skill::validator::Validator;
 use crate::SkiloError;
 use colored::Colorize;
 use dialoguer::Confirm;
+use std::collections::HashSet;
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -29,26 +32,96 @@ struct SkillInfo {
     errors: Vec<String>,
 }
 
+/// Target information for skill installation.
+struct InstallTarget {
+    agent: Agent,
+    path: PathBuf,
+    scope: Scope,
+}
+
+/// Resolve install targets from CLI arguments.
+fn resolve_targets(args: &AddArgs, config: &Config) -> Result<Vec<InstallTarget>, SkiloError> {
+    let project_root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let scope = if args.global {
+        Scope::Global
+    } else {
+        Scope::Project
+    };
+
+    // If --output is specified, use it directly
+    if let Some(ref output) = args.output {
+        return Ok(vec![InstallTarget {
+            agent: config.add.default_agent,
+            path: output.clone(),
+            scope: Scope::Project, // Custom path is treated as project scope
+        }]);
+    }
+
+    // Resolve agents from CLI args
+    let agents: Vec<Agent> = if let Some(ref cli_agents) = args.agent {
+        let mut resolved = Vec::new();
+        for cli_agent in cli_agents {
+            match cli_agent.to_selection() {
+                crate::cli::AgentSelection::All => {
+                    // "all" means all detected agents
+                    let detected = if args.global {
+                        Agent::detect_global()
+                    } else {
+                        Agent::detect_project(&project_root)
+                    };
+                    if detected.is_empty() {
+                        // Fall back to default agent if none detected
+                        resolved.push(config.add.default_agent);
+                    } else {
+                        resolved.extend(detected);
+                    }
+                }
+                crate::cli::AgentSelection::Single(agent) => {
+                    resolved.push(agent);
+                }
+            }
+        }
+        // Deduplicate
+        let mut seen = HashSet::new();
+        resolved.retain(|a| seen.insert(*a));
+        resolved
+    } else {
+        vec![config.add.default_agent]
+    };
+
+    // Build targets
+    let targets: Vec<InstallTarget> = agents
+        .into_iter()
+        .filter_map(|agent| {
+            let path = match scope {
+                Scope::Global => agent.resolve_global_skills_dir()?,
+                Scope::Project => Some(agent.resolve_project_skills_dir(&project_root))?,
+            };
+            Some(InstallTarget { agent, path, scope })
+        })
+        .collect();
+
+    if targets.is_empty() {
+        return Err(SkiloError::Config(
+            "No valid install targets found".to_string(),
+        ));
+    }
+
+    Ok(targets)
+}
+
 /// Run the add command.
 pub fn run(args: AddArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
-    use crate::agent::Agent;
-
     let formatter = get_formatter(cli.format, cli.quiet);
 
-    // Determine install directory: --output > --agent > config default
-    let install_dir = if let Some(ref output) = args.output {
-        output.clone()
-    } else if let Some(cli_agent) = args.agent {
-        let agent: Agent = cli_agent.into();
-        PathBuf::from(agent.skills_dir())
-    } else {
-        PathBuf::from(config.add.default_agent.skills_dir())
-    };
+    // Resolve install targets
+    let targets = resolve_targets(&args, config)?;
 
     // Parse the source
     let source = Source::parse_with_options(&args.source, args.branch.clone(), args.tag.clone())?;
 
-    match source {
+    // Extract source path based on source type
+    let (source_path, source_name, _temp_dir) = match source {
         Source::Git(git_source) => {
             let display_name = git_source.display_name();
 
@@ -64,149 +137,183 @@ pub fn run(args: AddArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError>
                 println!(" {}", "done".green());
             }
 
-            // Discover skills in the fetched repository
-            let skills = discover_skills(&fetch_result.root, config)?;
-
-            if skills.is_empty() {
-                return Err(SkiloError::NoSkillsFound { path: display_name });
-            }
-
-            // Filter by --skill if provided
-            let skills = filter_skills(skills, &args.skill);
-
-            if skills.is_empty() {
-                formatter.format_error(&format!(
-                    "No skills found matching: {}",
-                    args.skill
-                        .as_ref()
-                        .map(|v| v.join(", "))
-                        .unwrap_or_default()
-                ));
-                return Ok(1);
-            }
-
-            // List mode
-            if args.list {
-                print_skill_list(&skills);
-                return Ok(0);
-            }
-
-            // Confirm installation
-            let confirm = args.yes || !config.add.confirm;
-            if !confirm {
-                print_skill_list(&skills);
-                println!();
-
-                let prompt = format!(
-                    "Install {} skill{} to {}/?",
-                    skills.len(),
-                    if skills.len() == 1 { "" } else { "s" },
-                    install_dir.display()
-                );
-
-                if !Confirm::new()
-                    .with_prompt(prompt)
-                    .default(false)
-                    .interact()
-                    .map_err(|_| SkiloError::Cancelled)?
-                {
-                    return Err(SkiloError::Cancelled);
-                }
-
-                println!();
-            }
-
-            // Install skills
-            let installed = install_skills(&skills, &install_dir, args.yes, cli.quiet)?;
-
-            if !cli.quiet {
-                println!();
-                formatter.format_success(&format!(
-                    "Installed {} skill{} to {}/",
-                    installed,
-                    if installed == 1 { "" } else { "s" },
-                    install_dir.display()
-                ));
-            }
-
-            if installed == 0 {
-                Ok(1)
-            } else {
-                Ok(0)
-            }
+            (
+                fetch_result.root.clone(),
+                display_name,
+                Some(fetch_result.temp_dir),
+            )
         }
         Source::Local(path) => {
-            // Discover skills in the local path
-            let skills = discover_skills(&path, config)?;
+            let expanded =
+                expand_tilde(path.to_str().unwrap_or(".")).unwrap_or_else(|| path.clone());
+            (expanded.clone(), expanded.display().to_string(), None)
+        }
+    };
 
-            if skills.is_empty() {
-                return Err(SkiloError::NoSkillsFound {
-                    path: path.display().to_string(),
-                });
+    // Discover skills
+    let skills = discover_skills(&source_path, config)?;
+
+    if skills.is_empty() {
+        return Err(SkiloError::NoSkillsFound { path: source_name });
+    }
+
+    // Filter by --skill if provided
+    let skills = filter_skills(skills, &args.skill);
+
+    if skills.is_empty() {
+        formatter.format_error(&format!(
+            "No skills found matching: {}",
+            args.skill
+                .as_ref()
+                .map(|v| v.join(", "))
+                .unwrap_or_default()
+        ));
+        return Ok(1);
+    }
+
+    // List mode
+    if args.list {
+        print_skill_list(&skills);
+        return Ok(0);
+    }
+
+    // Build target descriptions for confirmation
+    let target_desc: Vec<String> = targets
+        .iter()
+        .map(|t| {
+            let scope_str = if t.scope.is_global() { " (global)" } else { "" };
+            format!(
+                "{}{}: {}",
+                t.agent.display_name(),
+                scope_str,
+                t.path.display()
+            )
+        })
+        .collect();
+
+    // Confirm installation
+    let confirm = args.yes || !config.add.confirm;
+    if !confirm {
+        print_skill_list(&skills);
+        println!();
+
+        if targets.len() == 1 {
+            let prompt = format!(
+                "Install {} skill{} to {}?",
+                skills.len(),
+                if skills.len() == 1 { "" } else { "s" },
+                target_desc[0]
+            );
+
+            if !Confirm::new()
+                .with_prompt(prompt)
+                .default(false)
+                .interact()
+                .map_err(|_| SkiloError::Cancelled)?
+            {
+                return Err(SkiloError::Cancelled);
             }
-
-            // Filter by --skill if provided
-            let skills = filter_skills(skills, &args.skill);
-
-            if skills.is_empty() {
-                formatter.format_error(&format!(
-                    "No skills found matching: {}",
-                    args.skill
-                        .as_ref()
-                        .map(|v| v.join(", "))
-                        .unwrap_or_default()
-                ));
-                return Ok(1);
+        } else {
+            println!("Target agents:");
+            for desc in &target_desc {
+                println!("  {}", desc.cyan());
             }
+            println!();
 
-            // List mode
-            if args.list {
-                print_skill_list(&skills);
-                return Ok(0);
+            let prompt = format!(
+                "Install {} skill{} to {} agent{}?",
+                skills.len(),
+                if skills.len() == 1 { "" } else { "s" },
+                targets.len(),
+                if targets.len() == 1 { "" } else { "s" }
+            );
+
+            if !Confirm::new()
+                .with_prompt(prompt)
+                .default(false)
+                .interact()
+                .map_err(|_| SkiloError::Cancelled)?
+            {
+                return Err(SkiloError::Cancelled);
             }
+        }
 
-            // Confirm installation
-            let confirm = args.yes || !config.add.confirm;
-            if !confirm {
-                print_skill_list(&skills);
-                println!();
+        println!();
+    }
 
-                let prompt = format!(
-                    "Install {} skill{} to {}/?",
-                    skills.len(),
-                    if skills.len() == 1 { "" } else { "s" },
-                    install_dir.display()
+    // Install skills to all targets
+    let mut total_installed = 0;
+
+    for target in &targets {
+        if !cli.quiet && targets.len() > 1 {
+            println!("Installing to {}...", target.agent.display_name().cyan());
+        }
+
+        // Check for feature compatibility warnings
+        if !cli.quiet {
+            check_feature_warnings(&skills, target.agent, &source_path);
+        }
+
+        let installed = install_skills(&skills, &target.path, args.yes, cli.quiet)?;
+        total_installed += installed;
+
+        if !cli.quiet {
+            formatter.format_success(&format!(
+                "Installed {} skill{} to {}/",
+                installed,
+                if installed == 1 { "" } else { "s" },
+                target.path.display()
+            ));
+        }
+    }
+
+    if !cli.quiet && targets.len() > 1 {
+        println!();
+        formatter.format_success(&format!(
+            "Total: {} skill{} installed to {} agent{}",
+            total_installed,
+            if total_installed == 1 { "" } else { "s" },
+            targets.len(),
+            if targets.len() == 1 { "" } else { "s" }
+        ));
+    }
+
+    if total_installed == 0 {
+        Ok(1)
+    } else {
+        Ok(0)
+    }
+}
+
+/// Check for feature compatibility warnings.
+fn check_feature_warnings(skills: &[SkillInfo], agent: Agent, _source_path: &Path) {
+    let features = agent.features();
+
+    for skill in skills {
+        if !skill.valid {
+            continue;
+        }
+
+        // Try to read skill manifest to check for feature usage
+        let skill_md = skill.source_path.join("SKILL.md");
+        if let Ok(content) = std::fs::read_to_string(&skill_md) {
+            // Check for context: fork usage
+            if content.contains("context: fork") && !features.context_fork {
+                eprintln!(
+                    "{}: Skill '{}' uses 'context: fork' which is only supported by Claude Code",
+                    "Warning".yellow(),
+                    skill.name.cyan()
                 );
-
-                if !Confirm::new()
-                    .with_prompt(prompt)
-                    .default(false)
-                    .interact()
-                    .map_err(|_| SkiloError::Cancelled)?
-                {
-                    return Err(SkiloError::Cancelled);
-                }
-
-                println!();
             }
 
-            // Install skills
-            let installed = install_skills(&skills, &install_dir, args.yes, cli.quiet)?;
-
-            if !cli.quiet {
-                println!();
-                formatter.format_success(&format!(
-                    "Installed {} skill{} to {}/",
-                    installed,
-                    if installed == 1 { "" } else { "s" },
-                    install_dir.display()
-                ));
-            }
-
-            if installed == 0 {
-                Ok(1)
-            } else {
-                Ok(0)
+            // Check for hooks usage
+            if content.contains("hooks:") && !features.hooks {
+                eprintln!(
+                    "{}: Skill '{}' uses hooks which may not be supported by {}",
+                    "Warning".yellow(),
+                    skill.name.cyan(),
+                    agent.display_name()
+                );
             }
         }
     }

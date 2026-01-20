@@ -11,6 +11,7 @@ pub mod error;
 pub mod git;
 pub mod lang;
 pub mod output;
+pub mod scope;
 pub mod skill;
 pub mod templates;
 

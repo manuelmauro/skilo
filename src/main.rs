@@ -27,6 +27,8 @@ fn main() -> Result<()> {
             commands::read_properties::run(args.clone(), &config, &cli)?
         }
         Command::ToPrompt(args) => commands::to_prompt::run(args.clone(), &config, &cli)?,
+        Command::List(args) => commands::list::run(args.clone(), &config, &cli)?,
+        Command::Agents(args) => commands::agents::run(args.clone(), &config, &cli)?,
     };
 
     std::process::exit(exit_code);

@@ -41,6 +41,8 @@ curl -fsSL https://raw.githubusercontent.com/manuelmauro/skilo/main/.claude/skil
 Once installed, your AI assistant will be able to:
 - Install skills from repositories using `skilo add`
 - Create new skills using `skilo new`
+- List installed skills with `skilo list`
+- Detect installed agents with `skilo agents`
 - Validate skills with `skilo lint`
 - Format SKILL.md files with `skilo fmt`
 - Extract skill metadata with `skilo read-properties`
@@ -88,9 +90,19 @@ skilo add git@github.com:owner/repo.git
 
 # Install from local path
 skilo add ./path/to/skills
+
+# Install to global skills directory
+skilo add anthropics/skills --global
+
+# Install to multiple agents
+skilo add anthropics/skills --agent claude --agent cursor
+
+# Install to all detected agents
+skilo add anthropics/skills --agent all
 ```
 
-Skills are installed to `.claude/skills/<skill-name>/` by default.
+Skills are installed to `.claude/skills/<skill-name>/` by default (project-level).
+Use `--global` to install to `~/.claude/skills/` (user-level).
 
 ### Create a new skill
 
@@ -106,6 +118,12 @@ skilo new my-skill --lang python
 
 # Add a description and license
 skilo new my-skill --description "My awesome skill" --license MIT
+
+# Create a global skill
+skilo new my-skill --global
+
+# Create a skill for a specific agent
+skilo new my-skill --agent cursor
 ```
 
 **Available templates:**
@@ -154,6 +172,46 @@ Formatting includes:
 ```bash
 # Run lint + format check (ideal for CI)
 skilo check .
+```
+
+### List installed skills
+
+```bash
+# List project skills
+skilo list
+
+# List skills from a specific project
+skilo list /path/to/project
+
+# List global skills only
+skilo list --global
+
+# List both project and global skills
+skilo list --all
+
+# List skills for a specific agent
+skilo list --agent cursor
+```
+
+### List detected agents
+
+```bash
+# Show detected agents with skill counts
+skilo agents
+
+# Show feature support matrix
+skilo agents --verbose
+```
+
+Example output:
+
+```
+Project agents:
+  Claude Code    .claude/skills/  (3 skills)
+  Cursor         .cursor/skills/  (1 skill)
+
+Global agents:
+  Claude Code    ~/.claude/skills/  (2 skills)
 ```
 
 ### Read skill properties
