@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use miette::Result;
-use skilo::cli::{Cli, Command};
+use skilo::cli::{Cli, Command, SelfCommand};
 use skilo::commands;
 use skilo::config::Config;
 
@@ -30,6 +30,11 @@ fn main() -> Result<()> {
         Command::List(args) => commands::list::run(args.clone(), &config, &cli)?,
         Command::Agents(args) => commands::agents::run(args.clone(), &config, &cli)?,
         Command::Cache(args) => commands::cache::run(args.clone(), &config, &cli)?,
+        Command::SelfCmd(args) => match &args.command {
+            SelfCommand::Update(update_args) => {
+                commands::self_update::run(update_args.clone(), &config, &cli)?
+            }
+        },
     };
 
     std::process::exit(exit_code);

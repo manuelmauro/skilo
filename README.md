@@ -7,6 +7,18 @@ A CLI tool for [Agent Skills](https://agentskills.io/specification) development.
 
 ## Installation
 
+### Quick install (recommended)
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
+```
+
+### From crates.io
+
+```bash
+cargo install skilo
+```
+
 ### From source
 
 ```bash

@@ -96,6 +96,10 @@ pub enum Command {
     /// repeated installs and enable offline usage.
     #[command(verbatim_doc_comment)]
     Cache(CacheArgs),
+
+    /// Manage the skilo installation
+    #[command(name = "self")]
+    SelfCmd(SelfArgs),
 }
 
 /// Arguments for the `add` command.
@@ -399,4 +403,31 @@ pub enum CacheCommand {
         #[arg(long, default_value = "30")]
         max_age: u32,
     },
+}
+
+/// Arguments for the `self` command.
+#[derive(clap::Args, Clone)]
+pub struct SelfArgs {
+    /// Self subcommand
+    #[command(subcommand)]
+    pub command: SelfCommand,
+}
+
+/// Self subcommands.
+#[derive(Subcommand, Clone)]
+pub enum SelfCommand {
+    /// Update skilo to the latest version
+    Update(SelfUpdateArgs),
+}
+
+/// Arguments for the `self update` command.
+#[derive(clap::Args, Clone)]
+pub struct SelfUpdateArgs {
+    /// Check for updates without installing
+    #[arg(long)]
+    pub check: bool,
+
+    /// Skip confirmation prompt
+    #[arg(long, short)]
+    pub yes: bool,
 }
