@@ -46,6 +46,8 @@ error() {
 }
 
 # Detect target triple (matches Rust target naming)
+# Supported pre-built binaries: Linux x86_64, macOS ARM, Windows x86_64
+# Other platforms will fall back to cargo install
 detect_target() {
     os=$(uname -s)
     arch=$(uname -m)
@@ -54,13 +56,11 @@ detect_target() {
         Linux)
             case "$arch" in
                 x86_64|amd64)   echo "x86_64-unknown-linux-gnu" ;;
-                aarch64|arm64)  echo "aarch64-unknown-linux-gnu" ;;
                 *)              echo "unknown" ;;
             esac
             ;;
         Darwin)
             case "$arch" in
-                x86_64|amd64)   echo "x86_64-apple-darwin" ;;
                 aarch64|arm64)  echo "aarch64-apple-darwin" ;;
                 *)              echo "unknown" ;;
             esac
