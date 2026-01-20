@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-01-20
+
+### Added
+
+- `self update` command to check for and install updates from GitHub releases
+  - `skilo self update` to update to the latest version
+  - `skilo self update --check` to check for updates without installing
+  - `skilo self update --yes` to skip confirmation prompt
+  - Detects cargo installations and warns about potential version conflicts
+- GitHub Actions release workflow to build binaries on tag push
+  - Builds for Linux (x86_64, aarch64, musl), macOS (x86_64, aarch64), Windows (x86_64)
+  - Automatically creates GitHub releases with attached binaries
+- Install script for quick setup via `curl | sh`
+- Installation instructions in README
+
+### Dependencies
+
+- Added `reqwest` for HTTP requests
+- Added `flate2` for gzip decompression
+- Added `tar` for archive extraction
+- Added `zip` (Windows) for zip archive extraction
+
 ## [0.6.0] - 2026-01-20
 
 ### Added

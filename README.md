@@ -443,7 +443,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install skilo
-        run: cargo install skilo@0.6.0
+        run: cargo install skilo@0.7.0
 
       - name: Lint skills
         run: skilo lint . --strict

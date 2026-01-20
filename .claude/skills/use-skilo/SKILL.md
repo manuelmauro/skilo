@@ -11,6 +11,9 @@ Skilo is a CLI tool for developing [Agent Skills](https://agentskills.io/specifi
 ## Installation
 
 ```bash
+# Quick install (recommended)
+curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
+
 # From crates.io
 cargo install skilo
 
@@ -142,14 +145,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-
       - name: Install skilo
-        run: cargo install skilo@0.6.0
+        run: curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
 
       - name: Lint skills
         run: skilo lint .claude/skills/
