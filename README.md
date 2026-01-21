@@ -7,324 +7,60 @@ A CLI tool for [Agent Skills](https://agentskills.io/specification) development.
 
 ## Installation
 
-### Quick install (recommended)
-
 ```bash
+# Quick install
 curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
-```
 
-### From crates.io
-
-```bash
+# Or from crates.io
 cargo install skilo
 ```
 
-### From source
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/manuelmauro/skilo.git
-cd skilo
-
-# Install using make
-make install
-
-# Or directly with cargo
-cargo install --path .
+skilo new my-skill                    # Create a skill from template
+skilo add owner/repo                  # Install skills from git
+skilo remove my-skill                 # Remove a skill
+skilo list                            # List installed skills
+skilo lint .                          # Validate skills
+skilo fmt .                           # Format SKILL.md files
 ```
+
+Run `skilo -h` for all commands and options.
 
 ## Using the Skilo Skill
 
-Skilo includes a skill that teaches AI coding assistants how to use the CLI. Add it to your project to enable your assistant to create and validate skills:
+Install the use-skilo skill to teach your AI assistant how to use skilo:
 
 ```bash
-# Install using skilo add
 skilo add manuelmauro/skilo --skill use-skilo
 ```
 
-Or manually with curl:
-
-```bash
-mkdir -p .claude/skills
-curl -fsSL https://raw.githubusercontent.com/manuelmauro/skilo/main/.claude/skills/use-skilo/SKILL.md \
-  -o .claude/skills/use-skilo/SKILL.md --create-dirs
-```
-
-Once installed, your AI assistant will be able to:
-- Install skills from repositories using `skilo add`
-- Create new skills using `skilo new`
-- List installed skills with `skilo list`
-- Detect installed agents with `skilo agents`
-- Manage git cache with `skilo cache`
-- Validate skills with `skilo lint`
-- Format SKILL.md files with `skilo fmt`
-- Extract skill metadata with `skilo read-properties`
-- Generate agent prompts with `skilo to-prompt`
-- Set up CI workflows for skill validation
-
-### Requirements
-
-- Rust 1.92.0 (pinned in `rust-toolchain.toml`)
-
-## Usage
-
-### Install skills from repositories
-
-```bash
-# Install all skills from a GitHub repository
-skilo add anthropics/skills
-
-# Install a specific skill by name
-skilo add vercel-labs/agent-skills --skill code-review
-
-# Install multiple specific skills
-skilo add owner/repo --skill lint-fix --skill test-runner
-
-# List available skills without installing
-skilo add anthropics/skills --list
-
-# Install from a specific branch
-skilo add owner/repo --branch develop
-
-# Install from a specific tag
-skilo add owner/repo --tag v1.0.0
-
-# Non-interactive installation (for CI)
-skilo add anthropics/skills --skill lint-fix --yes
-
-# Install from a full URL
-skilo add https://github.com/owner/repo
-
-# Install from a direct skill path
-skilo add https://github.com/owner/repo/tree/main/skills/my-skill
-
-# Install from SSH URL
-skilo add git@github.com:owner/repo.git
-
-# Install from local path
-skilo add ./path/to/skills
-
-# Install to global skills directory
-skilo add anthropics/skills --global
-
-# Install to multiple agents
-skilo add anthropics/skills --agent claude --agent cursor
-
-# Install to all detected agents
-skilo add anthropics/skills --agent all
-```
-
-Skills are installed to `.claude/skills/<skill-name>/` by default (project-level).
-Use `--global` to install to `~/.claude/skills/` (user-level).
-
-### Create a new skill
-
-```bash
-# Create a skill with the default template (hello-world)
-skilo new my-skill
-
-# Use a specific template
-skilo new my-skill --template minimal
-
-# Specify the script language
-skilo new my-skill --lang python
-
-# Add a description and license
-skilo new my-skill --description "My awesome skill" --license MIT
-
-# Create a global skill
-skilo new my-skill --global
-
-# Create a skill for a specific agent
-skilo new my-skill --agent cursor
-```
-
-**Available templates:**
-- `hello-world` (default) - A minimal working skill with a greeting script
-- `minimal` - Bare-bones skill with only SKILL.md
-- `full` - Complete skill with all optional directories
-- `script-based` - Skill focused on script execution
-
-**Supported languages:** `python`, `bash`, `javascript`, `typescript`
-
-### Validate skills
-
-```bash
-# Lint a skill directory
-skilo lint path/to/skill
-
-# Lint all skills in current directory
-skilo lint .
-
-# Strict mode (treat warnings as errors)
-skilo lint --strict .
-
-# Auto-fix simple issues
-skilo lint --fix .
-```
-
-### Format skills
-
-```bash
-# Format SKILL.md files (includes table alignment)
-skilo fmt path/to/skill
-
-# Check formatting without modifying
-skilo fmt --check .
-
-# Show diff of changes
-skilo fmt --diff .
-```
-
-Formatting includes:
-- YAML frontmatter normalization
-- Markdown table column alignment
-
-### Run all checks
-
-```bash
-# Run lint + format check (ideal for CI)
-skilo check .
-```
-
-### List installed skills
-
-```bash
-# List project skills
-skilo list
-
-# List skills from a specific project
-skilo list /path/to/project
-
-# List global skills only
-skilo list --global
-
-# List both project and global skills
-skilo list --all
-
-# List skills for a specific agent
-skilo list --agent cursor
-```
-
-### List detected agents
-
-```bash
-# Show detected agents with skill counts
-skilo agents
-
-# Show feature support matrix
-skilo agents --verbose
-```
-
-Example output:
-
-```
-Project agents:
-  Claude Code    .claude/skills/  (3 skills)
-  Cursor         .cursor/skills/  (1 skill)
-
-Global agents:
-  Claude Code    ~/.claude/skills/  (2 skills)
-```
-
-### Manage git cache
-
-Skilo caches git repositories for faster repeated installs and offline usage:
-
-```bash
-# Show cache status and disk usage
-skilo cache
-
-# Show cache directory path
-skilo cache path
-
-# Clean checkouts older than 30 days (keeps bare repos for fast re-checkout)
-skilo cache clean
-
-# Clean checkouts older than 7 days
-skilo cache clean --max-age 7
-
-# Remove entire cache (bare repos + checkouts)
-skilo cache clean --all
-```
-
-Example output:
-
-```
-Cache directory: /home/user/.skilo/git
-
-  db/: 2 repositories, 1.2 MB
-    anthropics-skills
-    manuelmauro-moonbeam-skills
-
-  checkouts/: 3 checkouts, 4.5 MB
-    anthropics-skills-a1b2c3d (2 days ago)
-    manuelmauro-moonbeam-skills-0c331b1 (just now)
-
-Total: 5.7 MB
-```
-
-### Read skill properties
-
-Extract skill metadata as JSON for programmatic use:
-
-```bash
-# Read properties from a single skill (outputs JSON object)
-skilo read-properties path/to/skill
-
-# Read properties from multiple skills (outputs JSON array)
-skilo read-properties path/to/skills/
-
-# Read from multiple paths
-skilo read-properties skill-a skill-b
-```
-
-Output includes: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed_tools`, and `path`.
-
-### Generate agent prompts
-
-Generate XML for use in agent system prompts:
-
-```bash
-# Generate XML for a single skill
-skilo to-prompt path/to/skill
-
-# Generate XML for all skills in a directory
-skilo to-prompt path/to/skills/
-```
-
-Example output:
-
-```xml
-<available_skills>
-  <skill>
-    <name>my-skill</name>
-    <description>A brief description of what the skill does.</description>
-    <location>path/to/my-skill/SKILL.md</location>
-  </skill>
-</available_skills>
-```
-
-### Output formats
-
-All commands support multiple output formats:
-
-```bash
-skilo lint --format text .   # Human-readable (default)
-skilo lint --format json .   # JSON output
-skilo lint --format sarif .  # SARIF for code scanning integrations
-```
+## Commands
+
+| Command           | Description                          |
+|-------------------|--------------------------------------|
+| `new`             | Create a skill from template         |
+| `add`             | Install skills from git/local path   |
+| `remove`          | Remove installed skills              |
+| `list`            | List installed skills                |
+| `agents`          | List detected AI coding agents       |
+| `cache`           | Manage git repository cache          |
+| `lint`            | Validate skills against spec         |
+| `fmt`             | Format SKILL.md files                |
+| `check`           | Run lint + format check              |
+| `read-properties` | Output skill metadata as JSON        |
+| `to-prompt`       | Generate XML for agent prompts       |
+| `self update`     | Update skilo to latest version       |
 
 ## Skill Structure
 
-A valid skill follows this structure:
-
 ```
 my-skill/
-├── SKILL.md           # Required: manifest with YAML frontmatter
-├── scripts/           # Optional: executable scripts
-├── references/        # Optional: additional documentation
-└── assets/            # Optional: static resources
+├── SKILL.md        # Required: manifest with YAML frontmatter
+├── scripts/        # Optional: executable scripts
+├── references/     # Optional: additional docs
+└── assets/         # Optional: static resources
 ```
 
 ### SKILL.md Format
@@ -332,147 +68,67 @@ my-skill/
 ```markdown
 ---
 name: my-skill
-description: A brief description of what the skill does.
+description: What the skill does and when to use it.
 license: MIT
 ---
 
 # My Skill
 
-Detailed documentation goes here.
+Instructions for the AI agent.
 ```
 
 ## Configuration
 
-Create a `.skilorc.toml` file for project-specific settings:
+Create `.skilorc.toml` for project settings:
 
 ```toml
 [lint]
 strict = true
 
 [lint.rules]
-name_format = true           # E001: Name format validation
-name_length = 64             # E002: Name max length (false to disable)
-name_directory = true        # E003: Name matches directory
-description_required = true  # E004: Description not empty
-description_length = 1024    # E005: Description max length (false to disable)
-compatibility_length = 500   # E006: Compatibility max length (false to disable)
-references_exist = true      # E009: Referenced files exist
-body_length = 500            # W001: Max body lines (false to disable)
-script_executable = true     # W002: Scripts are executable
-script_shebang = true        # W003: Scripts have shebang
-
-[fmt]
-sort_frontmatter = true
-indent_size = 2
-format_tables = true
+name_format = true
+name_length = 64
+body_length = 500
 
 [new]
 default_license = "MIT"
 default_template = "hello-world"
-default_lang = "python"
 
 [add]
-default_agent = "claude"  # See supported agents below
-confirm = true            # Prompt before installing (false for CI)
-validate = true           # Validate skills before installing
+# default_agent = "claude"  # Optional: defaults to ./skills/
+confirm = true
 ```
 
-### Configuring Rules
+See `skilo lint --help` for all available rules.
 
-Rules with thresholds accept `true` (default), `false` (disabled), or a number:
+## Multi-Agent Support
 
-```toml
-[lint.rules]
-name_directory = false       # Disable for monorepos
-script_executable = false    # Disable for Windows
-name_length = 128            # Custom max name length
-description_length = false   # Disable description length check
-body_length = 1000           # Custom max body lines
+Skilo supports 14 AI coding agents. By default, skills install to `./skills/`. Use `--agent` to target specific agents:
+
+```bash
+skilo add owner/repo --agent claude           # Install to .claude/skills/
+skilo add owner/repo --agent all              # Install to all detected agents
+skilo new my-skill --global --agent claude    # Create global skill
+skilo agents                                  # List detected agents
 ```
-
-### Supported Agents
-
-The `default_agent` option supports the following AI coding assistants:
-
-| Agent          | Config Value  | Project Path        | Global Path                     |
-| -------------- | ------------- | ------------------- | ------------------------------- |
-| Claude Code    | `claude`      | `.claude/skills/`   | `~/.claude/skills/`             |
-| OpenCode       | `open-code`   | `.opencode/skill/`  | `~/.config/opencode/skill/`     |
-| Codex          | `codex`       | `.codex/skills/`    | `~/.codex/skills/`              |
-| Cursor         | `cursor`      | `.cursor/skills/`   | `~/.cursor/skills/`             |
-| Amp            | `amp`         | `.agents/skills/`   | `~/.config/agents/skills/`      |
-| Kilo Code      | `kilo-code`   | `.kilocode/skills/` | `~/.kilocode/skills/`           |
-| Roo Code       | `roo-code`    | `.roo/skills/`      | `~/.roo/skills/`                |
-| Goose          | `goose`       | `.goose/skills/`    | `~/.config/goose/skills/`       |
-| Gemini CLI     | `gemini`      | `.gemini/skills/`   | `~/.gemini/skills/`             |
-| Antigravity    | `antigravity` | `.agent/skills/`    | `~/.gemini/antigravity/skills/` |
-| GitHub Copilot | `copilot`     | `.github/skills/`   | `~/.copilot/skills/`            |
-| Clawdbot       | `clawdbot`    | `skills/`           | `~/.clawdbot/skills/`           |
-| Droid          | `droid`       | `.factory/skills/`  | `~/.factory/skills/`            |
-| Windsurf       | `windsurf`    | `.windsurf/skills/` | `~/.codeium/windsurf/skills/`   |
 
 ## Environment Variables
 
-| Variable       | Description                                      |
-| -------------- | ------------------------------------------------ |
-| `SKILO_CONFIG` | Path to configuration file                       |
-| `SKILO_HOME`   | Override skilo home directory (default: `~/.skilo/`) |
-| `SKILO_CACHE`  | Override git cache directory (default: `~/.skilo/git/`) |
-| `SKILO_OFFLINE`| Set to `1` to use cached repositories only (no network) |
+| Variable        | Description                                |
+|-----------------|--------------------------------------------|
+| `SKILO_CONFIG`  | Path to configuration file                 |
+| `SKILO_HOME`    | Override skilo home (default: `~/.skilo/`) |
+| `SKILO_CACHE`   | Override git cache directory               |
+| `SKILO_OFFLINE` | Set to `1` for offline mode                |
 
 ## CI Integration
 
-Add skilo validation to your GitHub Actions workflow:
-
 ```yaml
-# .github/workflows/skills.yml
-name: Validate Skills
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install skilo
-        run: cargo install skilo@0.7.4
-
-      - name: Lint skills
-        run: skilo lint . --strict
-
-      - name: Check formatting
-        run: skilo fmt . --check
+- name: Validate skills
+  run: |
+    curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
+    skilo check --strict .
 ```
-
-To upload results to GitHub's Security tab, use SARIF output:
-
-```yaml
-      - name: Run skilo check
-        run: skilo lint . --format sarif > results.sarif
-        continue-on-error: true
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-```
-
-## Exit Codes
-
-| Code | Meaning                            |
-| ---- | ---------------------------------- |
-| 0    | Success                            |
-| 1    | Validation errors found            |
-| 2    | Invalid arguments or configuration |
-| 3    | I/O error                          |
 
 ## License
 

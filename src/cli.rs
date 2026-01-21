@@ -83,6 +83,12 @@ pub enum Command {
     #[command(verbatim_doc_comment)]
     List(ListArgs),
 
+    /// Remove installed skills
+    ///
+    /// Removes skills from project or global level by name.
+    #[command(verbatim_doc_comment)]
+    Remove(RemoveArgs),
+
     /// List detected agents
     ///
     /// Shows AI coding agents detected in the current project or globally,
@@ -369,6 +375,26 @@ pub struct ListArgs {
     /// Target agent
     #[arg(long, short, value_enum)]
     pub agent: Option<Agent>,
+}
+
+/// Arguments for the `remove` command.
+#[derive(clap::Args, Clone)]
+pub struct RemoveArgs {
+    /// Skill name(s) to remove
+    #[arg(required = true)]
+    pub skills: Vec<String>,
+
+    /// Remove from global scope
+    #[arg(long, short = 'g')]
+    pub global: bool,
+
+    /// Target agent
+    #[arg(long, short, value_enum)]
+    pub agent: Option<Agent>,
+
+    /// Skip confirmation prompts
+    #[arg(long, short)]
+    pub yes: bool,
 }
 
 /// Arguments for the `agents` command.

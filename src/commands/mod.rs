@@ -18,6 +18,8 @@ pub mod list;
 pub mod new;
 /// The `read-properties` command implementation.
 pub mod read_properties;
+/// The `remove` command implementation.
+pub mod remove;
 /// The `self update` command implementation.
 pub mod self_update;
 /// The `to-prompt` command implementation.
