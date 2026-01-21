@@ -6,6 +6,8 @@ pub mod add;
 pub mod agents;
 /// The `cache` command implementation.
 pub mod cache;
+/// The `completions` command implementation.
+pub mod completions;
 /// The `check` command implementation.
 pub mod check;
 /// The `fmt` command implementation.

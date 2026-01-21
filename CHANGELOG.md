@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `skilo remove --global --agent claude my-skill` removes from global scope
   - `skilo remove --yes my-skill` skips confirmation prompt
   - Supports removing multiple skills at once
+- `self completions` command to generate shell completions
+  - Supports bash, zsh, fish, powershell, and elvish
 
 ### Changed
 

@@ -38,20 +38,21 @@ skilo add manuelmauro/skilo --skill use-skilo
 
 ## Commands
 
-| Command           | Description                          |
-|-------------------|--------------------------------------|
-| `new`             | Create a skill from template         |
-| `add`             | Install skills from git/local path   |
-| `remove`          | Remove installed skills              |
-| `list`            | List installed skills                |
-| `agents`          | List detected AI coding agents       |
-| `cache`           | Manage git repository cache          |
-| `lint`            | Validate skills against spec         |
-| `fmt`             | Format SKILL.md files                |
-| `check`           | Run lint + format check              |
-| `read-properties` | Output skill metadata as JSON        |
-| `to-prompt`       | Generate XML for agent prompts       |
-| `self update`     | Update skilo to latest version       |
+| Command            | Description                        |
+| ------------------ | ---------------------------------- |
+| `new`              | Create a skill from template       |
+| `add`              | Install skills from git/local path |
+| `remove`           | Remove installed skills            |
+| `list`             | List installed skills              |
+| `agents`           | List detected AI coding agents     |
+| `cache`            | Manage git repository cache        |
+| `lint`             | Validate skills against spec       |
+| `fmt`              | Format SKILL.md files              |
+| `check`            | Run lint + format check            |
+| `read-properties`  | Output skill metadata as JSON      |
+| `to-prompt`        | Generate XML for agent prompts     |
+| `self update`      | Update skilo to latest version     |
+| `self completions` | Generate shell completions         |
 
 ## Skill Structure
 
@@ -115,11 +116,24 @@ skilo agents                                  # List detected agents
 ## Environment Variables
 
 | Variable        | Description                                |
-|-----------------|--------------------------------------------|
+| --------------- | ------------------------------------------ |
 | `SKILO_CONFIG`  | Path to configuration file                 |
 | `SKILO_HOME`    | Override skilo home (default: `~/.skilo/`) |
 | `SKILO_CACHE`   | Override git cache directory               |
 | `SKILO_OFFLINE` | Set to `1` for offline mode                |
+
+## Shell Completions
+
+```bash
+# Bash (add to ~/.bashrc)
+eval "$(skilo self completions bash)"
+
+# Zsh (add to ~/.zshrc)
+eval "$(skilo self completions zsh)"
+
+# Fish (add to ~/.config/fish/config.fish)
+skilo self completions fish | source
+```
 
 ## CI Integration
 

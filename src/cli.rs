@@ -444,6 +444,32 @@ pub struct SelfArgs {
 pub enum SelfCommand {
     /// Update skilo to the latest version
     Update(SelfUpdateArgs),
+
+    /// Generate shell completions
+    Completions(CompletionsArgs),
+}
+
+/// Arguments for the `self completions` command.
+#[derive(clap::Args, Clone)]
+pub struct CompletionsArgs {
+    /// Shell to generate completions for
+    #[arg(value_enum)]
+    pub shell: Shell,
+}
+
+/// Supported shells for completion generation.
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+pub enum Shell {
+    /// Bash shell
+    Bash,
+    /// Zsh shell
+    Zsh,
+    /// Fish shell
+    Fish,
+    /// PowerShell
+    PowerShell,
+    /// Elvish shell
+    Elvish,
 }
 
 /// Arguments for the `self update` command.
