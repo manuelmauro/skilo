@@ -40,12 +40,12 @@ impl From<&Manifest> for SkillEntry {
 /// Run the to-prompt command.
 ///
 /// Generates `<available_skills>` XML for agent prompts.
-pub fn run(args: ToPromptArgs, _config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
+pub fn run(args: ToPromptArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     // Collect all skill paths from all input paths
     let mut all_skill_paths: Vec<PathBuf> = Vec::new();
 
     for path in &args.paths {
-        let paths = Discovery::find_skills(path);
+        let paths = Discovery::find_skills(path, &config.discovery.ignore);
         all_skill_paths.extend(paths);
     }
 

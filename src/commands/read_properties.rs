@@ -54,12 +54,12 @@ impl From<&Manifest> for SkillProperties {
 /// Run the read-properties command.
 ///
 /// Outputs JSON with skill metadata from frontmatter.
-pub fn run(args: ReadPropertiesArgs, _config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
+pub fn run(args: ReadPropertiesArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError> {
     // Collect all skill paths from all input paths
     let mut all_skill_paths: Vec<PathBuf> = Vec::new();
 
     for path in &args.paths {
-        let paths = Discovery::find_skills(path);
+        let paths = Discovery::find_skills(path, &config.discovery.ignore);
         all_skill_paths.extend(paths);
     }
 

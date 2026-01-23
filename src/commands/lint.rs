@@ -14,7 +14,7 @@ pub fn run(args: LintArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError
     let strict = args.strict || config.lint.strict;
 
     // Find all skills
-    let skill_paths = Discovery::find_skills(&args.path);
+    let skill_paths = Discovery::find_skills(&args.path, &config.discovery.ignore);
 
     if skill_paths.is_empty() {
         return Err(SkiloError::NoSkillsFound {

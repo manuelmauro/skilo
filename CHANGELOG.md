@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `[discovery]` configuration section in `.skilorc.toml` to ignore directories during skill discovery
+  - Supports `.gitignore`-style glob patterns (e.g., `target`, `build-*`, `target/debug`, `**/cache`)
+  - Patterns can match directory names or relative paths from the search root
+  - No default ignore patterns - users must explicitly configure what to ignore
+
 ## [0.8.1] - 2026-01-22
 
 ### Fixed

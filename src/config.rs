@@ -57,6 +57,8 @@ pub struct Config {
     pub new: NewConfig,
     /// Add command configuration.
     pub add: AddConfig,
+    /// Discovery configuration.
+    pub discovery: DiscoveryConfig,
 }
 
 /// Configuration for the lint command.
@@ -180,6 +182,21 @@ impl Default for AddConfig {
             validate: true,
         }
     }
+}
+
+/// Configuration for skill discovery.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct DiscoveryConfig {
+    /// Glob patterns for directories to ignore during skill discovery.
+    ///
+    /// Patterns follow `.gitignore` style glob syntax:
+    /// - `target` - match directory named "target" at any depth
+    /// - `build-*` - match directories starting with "build-"
+    /// - `*.tmp` - match directories ending with ".tmp"
+    /// - `foo/bar` - match path "foo/bar" relative to search root
+    /// - `**/cache` - match "cache" directory at any depth
+    pub ignore: Vec<String>,
 }
 
 impl Config {

@@ -30,3 +30,6 @@ default_lang = "bash"
 # default_agent = "claude"  # Uncomment to default to a specific agent
 confirm = true
 validate = true
+
+[discovery]
+ignore = ["target"]

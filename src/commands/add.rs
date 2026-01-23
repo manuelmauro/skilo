@@ -370,7 +370,7 @@ fn discover_skills(root: &Path, config: &Config) -> Result<Vec<SkillInfo>, Skilo
     let mut seen_paths = HashSet::new();
 
     // Use the existing discovery mechanism
-    let skill_paths = Discovery::find_skills(root);
+    let skill_paths = Discovery::find_skills(root, &config.discovery.ignore);
 
     if skill_paths.is_empty() {
         // Try looking in common locations and all agent-specific directories
@@ -380,7 +380,7 @@ fn discover_skills(root: &Path, config: &Config) -> Result<Vec<SkillInfo>, Skilo
         for loc in locations {
             let path = root.join(loc);
             if path.exists() {
-                let found = Discovery::find_skills(&path);
+                let found = Discovery::find_skills(&path, &config.discovery.ignore);
                 for skill_path in found {
                     if seen_paths.insert(skill_path.clone()) {
                         if let Some(info) = load_skill_info(&skill_path, config) {
