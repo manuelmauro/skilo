@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-01-22
+
+### Fixed
+
+- `list --agent all` now correctly iterates over all detected agents instead of falling back to default agent
+
+### Changed
+
+- `list` command now defaults to showing skills from all detected agents (equivalent to `--agent all`)
+
 ## [0.8.0] - 2026-01-21
 
 ### Added
