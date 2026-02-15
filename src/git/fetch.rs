@@ -64,7 +64,18 @@ fn fetch_cached(source: &GitSource, owner: &str, repo: &str) -> Result<FetchResu
         })?;
 
         if !is_offline() {
-            fetch_updates(&repo, &source.url)?;
+            if let Err(e) = fetch_updates(&repo, &source.url) {
+                if matches!(&e, SkiloError::AuthenticationFailed) {
+                    if let Some(ssh_url) = https_to_ssh_url(&source.url) {
+                        eprintln!("HTTPS auth failed, retrying fetch with SSH: {}", ssh_url);
+                        fetch_updates(&repo, &ssh_url)?;
+                    } else {
+                        return Err(e);
+                    }
+                } else {
+                    return Err(e);
+                }
+            }
         }
 
         repo
@@ -76,7 +87,20 @@ fn fetch_cached(source: &GitSource, owner: &str, repo: &str) -> Result<FetchResu
         }
 
         // Clone as bare repository
-        clone_bare(&source.url, &db_path)?
+        match clone_bare(&source.url, &db_path) {
+            Ok(repo) => repo,
+            Err(e) if matches!(&e, SkiloError::AuthenticationFailed) => {
+                if let Some(ssh_url) = https_to_ssh_url(&source.url) {
+                    eprintln!("HTTPS auth failed, retrying clone with SSH: {}", ssh_url);
+                    // Clean up partial clone directory before retrying
+                    let _ = std::fs::remove_dir_all(&db_path);
+                    clone_bare(&ssh_url, &db_path)?
+                } else {
+                    return Err(e);
+                }
+            }
+            Err(e) => return Err(e),
+        }
     };
 
     // Resolve the reference to a commit
@@ -126,7 +150,6 @@ fn fetch_to_temp(source: &GitSource) -> Result<FetchResult, SkiloError> {
     }
 
     let temp_dir = TempDir::new().map_err(SkiloError::Io)?;
-
     let repo = clone_repo(&source.url, source.reference(), temp_dir.path())?;
 
     // Get the HEAD commit
@@ -195,9 +218,7 @@ fn fetch_updates(repo: &Repository, url: &str) -> Result<(), SkiloError> {
 
     remote
         .fetch(&["refs/heads/*:refs/heads/*"], Some(&mut fetch_opts), None)
-        .map_err(|e| SkiloError::Git {
-            message: format!("Failed to fetch updates: {}", e),
-        })?;
+        .map_err(|e| map_git_error(e, url))?;
 
     Ok(())
 }
@@ -367,7 +388,13 @@ fn map_git_error(e: git2::Error, url: &str) -> SkiloError {
     let message = e.message().to_string();
     let code = e.code();
 
-    if message.contains("Could not resolve host")
+    if code == git2::ErrorCode::Auth
+        || message.contains("failed to acquire username/password")
+        || message.contains("authentication required")
+        || message.contains("could not read Username")
+    {
+        SkiloError::AuthenticationFailed
+    } else if message.contains("Could not resolve host")
         || message.contains("network")
         || message.contains("connection")
     {
@@ -379,6 +406,20 @@ fn map_git_error(e: git2::Error, url: &str) -> SkiloError {
     } else {
         SkiloError::Git { message }
     }
+}
+
+/// Convert a GitHub HTTPS URL to an SSH URL.
+///
+/// Returns `None` for non-GitHub URLs or URLs that don't match the `owner/repo` pattern.
+fn https_to_ssh_url(url: &str) -> Option<String> {
+    let trimmed = url.trim_end_matches(".git");
+    if let Some(path) = trimmed.strip_prefix("https://github.com/") {
+        let parts: Vec<&str> = path.split('/').collect();
+        if parts.len() == 2 && !parts[0].is_empty() && !parts[1].is_empty() {
+            return Some(format!("git@github.com:{}.git", path));
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -396,5 +437,53 @@ mod tests {
 
         let result = fetch(&source);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_https_to_ssh_url_github() {
+        assert_eq!(
+            https_to_ssh_url("https://github.com/owner/repo.git"),
+            Some("git@github.com:owner/repo.git".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_to_ssh_url_github_no_git_suffix() {
+        assert_eq!(
+            https_to_ssh_url("https://github.com/owner/repo"),
+            Some("git@github.com:owner/repo.git".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_to_ssh_url_non_github() {
+        assert_eq!(https_to_ssh_url("https://gitlab.com/owner/repo.git"), None);
+    }
+
+    #[test]
+    fn test_https_to_ssh_url_already_ssh() {
+        assert_eq!(https_to_ssh_url("git@github.com:owner/repo.git"), None);
+    }
+
+    #[test]
+    fn test_map_git_error_auth_code() {
+        let err = git2::Error::new(
+            git2::ErrorCode::Auth,
+            git2::ErrorClass::Ssh,
+            "authentication failed",
+        );
+        let result = map_git_error(err, "https://github.com/owner/repo.git");
+        assert!(matches!(result, SkiloError::AuthenticationFailed));
+    }
+
+    #[test]
+    fn test_map_git_error_credential_message() {
+        let err = git2::Error::new(
+            git2::ErrorCode::GenericError,
+            git2::ErrorClass::Http,
+            "failed to acquire username/password from local configuration",
+        );
+        let result = map_git_error(err, "https://github.com/owner/repo.git");
+        assert!(matches!(result, SkiloError::AuthenticationFailed));
     }
 }

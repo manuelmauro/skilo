@@ -69,6 +69,16 @@ pub enum SkiloError {
         message: String,
     },
 
+    /// Authentication failed for a git repository.
+    #[error("Authentication failed")]
+    #[diagnostic(
+        code(skilo::auth_failed),
+        help(
+            "For private repos, ensure SSH keys are configured or set up a git credential helper"
+        )
+    )]
+    AuthenticationFailed,
+
     /// Repository not found.
     #[error("Repository not found: {url}")]
     #[diagnostic(code(skilo::repo_not_found))]
