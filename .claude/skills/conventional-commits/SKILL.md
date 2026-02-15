@@ -81,3 +81,7 @@ Add scope in parentheses for more context:
 git commit -m "feat(auth): :sparkles: add OAuth2 support"
 git commit -m "fix(api): :bug: handle null response"
 ```
+
+## Co-Authorship
+
+Do **not** add `Co-Authored-By` trailers to commit messages.
