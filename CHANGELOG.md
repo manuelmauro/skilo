@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-02-15
+
 ### Added
 
 - `[discovery]` configuration section in `.skilorc.toml` to ignore directories during skill discovery
   - Supports `.gitignore`-style glob patterns (e.g., `target`, `build-*`, `target/debug`, `**/cache`)
   - Patterns can match directory names or relative paths from the search root
   - No default ignore patterns - users must explicitly configure what to ignore
+
+### Fixed
+
+- `skilo add` now falls back to SSH when HTTPS authentication fails for private GitHub repos
+
+### Changed
+
+- Bumped MSRV from 1.75 to 1.85
+- Updated dependencies: colored 3, comrak 0.49, dialoguer 0.12, dirs 6, git2 0.20, quick-xml 0.39, reqwest 0.13, thiserror 2, toml 1, zip 7
 
 ## [0.8.1] - 2026-01-22
 
