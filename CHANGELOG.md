@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-03-12
+
+### Added
+
+- `--path` / `-p` option for `skilo add` to import skills from a specific subdirectory within a source repository (e.g., `skilo add --path moonbeam-engineering owner/repo`)
+  - Works with all source formats: GitHub shorthand, HTTPS/SSH URLs, and local paths
+  - Composes with subdirectories already parsed from `/tree/branch/path` URLs
+
+### Changed
+
+- Marked slow network-dependent test (`test_fetch_nonexistent_repo`) as `#[ignore]` to speed up CI
+
 ## [0.9.0] - 2026-02-15
 
 ### Added
