@@ -134,6 +134,12 @@ pub struct AddArgs {
     #[arg(long, short = 't')]
     pub tag: Option<String>,
 
+    /// Only import skills from a specific subdirectory within the source
+    ///
+    /// Example: --path moonbeam-engineering
+    #[arg(long, short)]
+    pub path: Option<String>,
+
     /// Target agent(s) (determines install directory)
     ///
     /// Can be specified multiple times: --agent claude --agent cursor

@@ -145,7 +145,23 @@ pub fn run(args: AddArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloError>
     let targets = resolve_targets(&args, config)?;
 
     // Parse the source
-    let source = Source::parse_with_options(&args.source, args.branch.clone(), args.tag.clone())?;
+    let mut source =
+        Source::parse_with_options(&args.source, args.branch.clone(), args.tag.clone())?;
+
+    // Apply --path to narrow the source to a specific subdirectory
+    if let Some(ref path) = args.path {
+        match &mut source {
+            Source::Git(ref mut git_source) => {
+                git_source.subdir = Some(match &git_source.subdir {
+                    Some(existing) => format!("{}/{}", existing, path.trim_matches('/')),
+                    None => path.trim_matches('/').to_string(),
+                });
+            }
+            Source::Local(ref mut local_path) => {
+                *local_path = local_path.join(path.trim_matches('/'));
+            }
+        }
+    }
 
     // Extract source path based on source type
     let (source_path, source_name, _temp_dir) = match source {
