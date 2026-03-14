@@ -198,6 +198,8 @@ pub enum Agent {
     Droid,
     /// Windsurf
     Windsurf,
+    /// Pi Mono
+    PiMono,
 }
 
 impl Agent {
@@ -219,6 +221,7 @@ impl Agent {
             Agent::Clawdbot => AgentSelection::Single(crate::agent::Agent::Clawdbot),
             Agent::Droid => AgentSelection::Single(crate::agent::Agent::Droid),
             Agent::Windsurf => AgentSelection::Single(crate::agent::Agent::Windsurf),
+            Agent::PiMono => AgentSelection::Single(crate::agent::Agent::PiMono),
         }
     }
 }
