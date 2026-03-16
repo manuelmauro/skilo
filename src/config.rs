@@ -59,6 +59,8 @@ pub struct Config {
     pub add: AddConfig,
     /// Discovery configuration.
     pub discovery: DiscoveryConfig,
+    /// Eval configuration.
+    pub eval: EvalConfig,
 }
 
 /// Configuration for the lint command.
@@ -197,6 +199,28 @@ pub struct DiscoveryConfig {
     /// - `foo/bar` - match path "foo/bar" relative to search root
     /// - `**/cache` - match "cache" directory at any depth
     pub ignore: Vec<String>,
+}
+
+/// Configuration for the eval command.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct EvalConfig {
+    /// Path to the pi binary (default: "pi" from PATH).
+    pub agent_bin: Option<String>,
+    /// Default model for evaluations (passed to `pi --model`).
+    pub default_model: Option<String>,
+    /// Default provider (passed to `pi --provider`).
+    pub default_provider: Option<String>,
+    /// Default thinking level (passed to `pi --thinking`).
+    pub default_thinking: Option<String>,
+    /// Default number of runs per test.
+    pub default_runs: Option<u32>,
+    /// Default timeout in seconds.
+    pub default_timeout: Option<u64>,
+    /// Default output format.
+    pub default_format: Option<String>,
+    /// Fail the command if any test fails.
+    pub fail_on_error: bool,
 }
 
 impl Config {

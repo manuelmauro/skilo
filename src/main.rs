@@ -30,6 +30,7 @@ fn main() -> Result<()> {
         Command::List(args) => commands::list::run(args.clone(), &config, &cli)?,
         Command::Remove(args) => commands::remove::run(args.clone(), &config, &cli)?,
         Command::Agents(args) => commands::agents::run(args.clone(), &config, &cli)?,
+        Command::Eval(args) => commands::eval::run(args.clone(), &config, &cli)?,
         Command::Cache(args) => commands::cache::run(args.clone(), &config, &cli)?,
         Command::SelfCmd(args) => match &args.command {
             SelfCommand::Update(update_args) => {

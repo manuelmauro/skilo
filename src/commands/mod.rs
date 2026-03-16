@@ -10,6 +10,8 @@ pub mod cache;
 pub mod check;
 /// The `completions` command implementation.
 pub mod completions;
+/// The `eval` command implementation.
+pub mod eval;
 /// The `fmt` command implementation.
 pub mod fmt;
 /// The `lint` command implementation.

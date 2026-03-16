@@ -103,6 +103,13 @@ pub enum Command {
     #[command(verbatim_doc_comment)]
     Cache(CacheArgs),
 
+    /// Run evaluations for skills
+    ///
+    /// Parses EVAL.md files and executes tests via the Pi agent.
+    /// Supports triggering, functional, and performance comparison tests.
+    #[command(verbatim_doc_comment)]
+    Eval(EvalArgs),
+
     /// Manage the skilo installation
     #[command(name = "self")]
     SelfCmd(SelfArgs),
@@ -479,6 +486,77 @@ pub enum Shell {
     PowerShell,
     /// Elvish shell
     Elvish,
+}
+
+/// Arguments for the `eval` command.
+#[derive(clap::Args, Clone)]
+pub struct EvalArgs {
+    /// Path to skill or directory containing skills
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// Eval subcommand (e.g., init)
+    #[command(subcommand)]
+    pub command: Option<EvalCommand>,
+
+    /// Run only the specified test by name
+    #[arg(long)]
+    pub test: Option<String>,
+
+    /// Run only tests of this category: trigger, functional, perf
+    #[arg(long)]
+    pub category: Option<String>,
+
+    /// Override the model (passed to `pi --model`)
+    #[arg(long)]
+    pub model: Option<String>,
+
+    /// Override the provider (passed to `pi --provider`)
+    #[arg(long)]
+    pub provider: Option<String>,
+
+    /// Override thinking level (passed to `pi --thinking`)
+    #[arg(long)]
+    pub thinking: Option<String>,
+
+    /// Override number of runs per test
+    #[arg(long)]
+    pub runs: Option<u32>,
+
+    /// Override per-test timeout in seconds
+    #[arg(long)]
+    pub timeout: Option<u64>,
+
+    /// Eval output format: text, json, markdown
+    #[arg(long = "eval-format")]
+    pub eval_format: Option<String>,
+
+    /// Stop on first failure
+    #[arg(long)]
+    pub fail_fast: bool,
+
+    /// Show full agent input/output
+    #[arg(long, short)]
+    pub verbose: bool,
+
+    /// Parse and validate evals without running them
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+/// Eval subcommands.
+#[derive(Subcommand, Clone)]
+pub enum EvalCommand {
+    /// Scaffold EVAL.md and evals/ directory for a skill
+    Init(EvalInitArgs),
+}
+
+/// Arguments for `eval init`.
+#[derive(clap::Args, Clone)]
+pub struct EvalInitArgs {
+    /// Path to skill directory
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
 }
 
 /// Arguments for the `self update` command.
