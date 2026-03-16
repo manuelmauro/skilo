@@ -35,6 +35,28 @@ Today, `skilo` has no way to encode, run, or report on any of these test categor
 
 We will add a `skilo eval` subcommand that allows skill authors to define, run, and report on evaluations for their skills. The design directly encodes the three test categories recommended by Anthropic's guide — triggering, functional, and performance — as first-class concepts, and supports the "iterate on a single task first, then expand" workflow.
 
+### Agent Runtime: Pi Mono
+
+Rather than implementing direct LLM API integration, `skilo eval` delegates all agent execution to [Pi Mono](https://github.com/nichochar/pi-mono) (`pi`), an AI coding agent CLI with native skill support. Each eval test is executed by shelling out to `pi` in non-interactive mode:
+
+```bash
+# Functional/triggering test — run with the skill loaded
+pi --print --no-session --skill ./my-skill/ "prompt from EVAL.md"
+
+# Performance baseline — run without any skills
+pi --print --no-session --no-skills "prompt from EVAL.md"
+```
+
+This approach provides significant advantages:
+
+1. **No API key management** — `pi` handles authentication with its own configured providers
+2. **Real tool execution** — tests run with actual `read`, `bash`, `edit`, `write` tools, matching real-world usage
+3. **Skill loading handled by pi** — the exact same skill resolution and injection path as production
+4. **Model selection via pi flags** — `--model`, `--provider`, `--thinking` are passed through
+5. **Agent-agnostic** — while Pi Mono is the default, the runner interface can be extended to support other agents
+
+`skilo eval` is responsible for parsing `EVAL.md`, orchestrating test runs, grading outputs, and reporting results. `pi` is responsible for agent execution — loading the skill, interacting with the model, and producing output.
+
 ### Test Categories
 
 Following the official Anthropic guidance, every eval suite is organized around three test categories. Authors can use any combination of them.
@@ -209,7 +231,9 @@ Run the same prompt without the skill enabled.
 | ------------- | -------- | -------- | ------------------------------------------------- |
 | `name`        | string   | yes      | Evaluation suite name (1-64 chars)                |
 | `description` | string   | yes      | What is being evaluated (1-1024 chars)            |
-| `model`       | string   | no       | Default model to evaluate against                 |
+| `model`       | string   | no       | Model to pass to `pi --model` (default: pi's configured default) |
+| `provider`    | string   | no       | Provider to pass to `pi --provider` (default: pi's configured default) |
+| `thinking`    | string   | no       | Thinking level to pass to `pi --thinking` (off, minimal, low, medium, high, xhigh) |
 | `runs`        | integer  | no       | Number of times to run each test (default: 1)     |
 | `timeout`     | integer  | no       | Per-test timeout in seconds (default: 60)         |
 | `grader`      | string   | no       | Default grader: `exact`, `contains`, `llm`, `script` (default: `contains`) |
@@ -304,8 +328,11 @@ skilo eval .
 # Run a specific test
 skilo eval my-skill/ --test basic-usage
 
-# Run with a specific model
+# Run with a specific model (passed to pi --model)
 skilo eval my-skill/ --model claude-sonnet-4-20250514
+
+# Run with a specific provider (passed to pi --provider)
+skilo eval my-skill/ --provider anthropic
 
 # Run multiple times for statistical confidence
 skilo eval my-skill/ --runs 5
@@ -320,13 +347,15 @@ Options:
 | --------------------- | -------------------------------------------------- | ----------- |
 | `--test <name>`       | Run only the specified test by name                | all tests   |
 | `--category <cat>`    | Run only tests of this category: `trigger`, `functional`, `perf` | all |
-| `--model <model>`     | Override the model used for evaluation             | from EVAL.md |
+| `--model <model>`     | Override the model (passed to `pi --model`)        | from EVAL.md |
+| `--provider <name>`   | Override the provider (passed to `pi --provider`)  | from EVAL.md |
+| `--thinking <level>`  | Override thinking level (passed to `pi --thinking`) | from EVAL.md |
 | `--runs <n>`          | Override number of runs per test                   | from EVAL.md |
 | `--timeout <secs>`    | Override per-test timeout                          | from EVAL.md |
 | `--format <fmt>`      | Output format: `text`, `json`, `markdown`          | `text`      |
 | `--fail-fast`         | Stop on first failure                              | `false`     |
 | `--grader <type>`     | Override grader for all functional tests           | from EVAL.md |
-| `--verbose`           | Show full model input/output                       | `false`     |
+| `--verbose`           | Show full agent input/output                       | `false`     |
 | `--dry-run`           | Parse and validate evals without running them      | `false`     |
 
 #### `skilo eval init [path]`
@@ -482,8 +511,17 @@ In `.skilorc.toml`:
 
 ```toml
 [eval]
-# Default model for evaluations
+# Path to the pi binary (default: "pi" from PATH)
+agent_bin = "pi"
+
+# Default model for evaluations (passed to pi --model)
 default_model = "claude-sonnet-4-20250514"
+
+# Default provider (passed to pi --provider)
+default_provider = "anthropic"
+
+# Default thinking level (passed to pi --thinking)
+default_thinking = "medium"
 
 # Default number of runs per test
 default_runs = 1
@@ -523,7 +561,7 @@ This allows evals to be included in CI pipelines alongside existing validation:
 | 1    | One or more evaluations failed       |
 | 2    | Invalid arguments or configuration   |
 | 3    | I/O error (file not found, timeout)  |
-| 4    | Model/API error (unreachable, auth)  |
+| 4    | Agent error (`pi` not found, crashed, or auth failure) |
 
 ## Consequences
 
@@ -535,19 +573,23 @@ This allows evals to be included in CI pipelines alongside existing validation:
 - Multiple grading strategies accommodate diverse skill types
 - Familiar testing UX (inspired by `cargo test`, `pytest`)
 - Statistical confidence through repeated runs
+- **No API key management in skilo** — delegated entirely to `pi`
+- **Real tool execution** — evals run with actual agent tools (`read`, `bash`, `edit`, `write`), matching production behavior
+- **Skill loading fidelity** — `pi` uses the same skill resolution and injection as real usage, no simulation
 
 ### Negative
 
-- Requires API access/credentials for model-based evaluation
-- Eval runs incur cost and latency (LLM API calls)
+- Requires `pi` to be installed and configured (API keys, provider setup)
+- Eval runs incur cost and latency (LLM API calls via `pi`)
 - Non-deterministic model outputs make exact matching fragile
 - Additional file (`EVAL.md`) and directory (`evals/`) to maintain
 - LLM-as-judge grading introduces its own reliability questions
+- Dependency on `pi` CLI interface stability — breaking changes in `pi` flags could affect `skilo eval`
 
 ### Neutral
 
 - Evals are optional — skills work without them
-- Does not prescribe a specific LLM provider; model string is opaque to skilo
+- Model and provider selection is handled by `pi`; `skilo` passes through flags but does not interpret them
 - Eval results are ephemeral by default (no persistent history)
 - Complements but does not replace manual skill review
 
@@ -563,6 +605,7 @@ src/
 ├── eval/
 │   ├── mod.rs           # Public API
 │   ├── parser.rs        # EVAL.md parsing (frontmatter + test cases)
+│   ├── agent.rs         # Pi agent subprocess management
 │   ├── runner.rs        # Test execution orchestration
 │   ├── categories/
 │   │   ├── mod.rs
@@ -585,11 +628,23 @@ src/
 ### Key Types
 
 ```rust
+/// Configuration for invoking the pi agent.
+pub struct AgentConfig {
+    /// Path to the pi binary (default: "pi").
+    pub bin: String,
+    /// Model override (passed to pi --model).
+    pub model: Option<String>,
+    /// Provider override (passed to pi --provider).
+    pub provider: Option<String>,
+    /// Thinking level override (passed to pi --thinking).
+    pub thinking: Option<String>,
+}
+
 /// Parsed evaluation suite from EVAL.md.
 pub struct EvalSuite {
     pub name: String,
     pub description: String,
-    pub model: Option<String>,
+    pub agent: AgentConfig,
     pub runs: u32,
     pub timeout: u64,
     pub default_grader: GraderKind,
@@ -693,20 +748,65 @@ pub enum TestStatus {
 }
 ```
 
+### Agent Invocation
+
+Each test is executed by spawning `pi` as a subprocess. The runner builds the command based on the test category:
+
+```rust
+/// Build the pi command for a test run.
+fn build_agent_command(
+    config: &AgentConfig,
+    skill_path: &Path,
+    prompt: &str,
+    with_skill: bool,
+) -> Command {
+    let mut cmd = Command::new(&config.bin);
+    cmd.args(["--print", "--no-session"]);
+
+    if with_skill {
+        cmd.args(["--skill", &skill_path.display().to_string()]);
+    } else {
+        cmd.arg("--no-skills");
+    }
+
+    if let Some(model) = &config.model {
+        cmd.args(["--model", model]);
+    }
+    if let Some(provider) = &config.provider {
+        cmd.args(["--provider", provider]);
+    }
+    if let Some(thinking) = &config.thinking {
+        cmd.args(["--thinking", thinking]);
+    }
+
+    cmd.arg(prompt);
+    cmd
+}
+```
+
+For each test category, the invocation pattern differs:
+
+- **Triggering tests**: Run `pi -p --no-session --skill <path> "<prompt>"` and inspect the output to determine if the skill was activated. Run again with `--no-skills` to compare behavior.
+- **Functional tests**: Run `pi -p --no-session --skill <path> "<prompt>"` and grade the output against expectations.
+- **Performance tests**: Run the same prompt twice — once with `--skill <path>` and once with `--no-skills` — and compare metrics (duration, output length as proxy for token usage, etc.).
+
 ### Execution Flow
 
 ```
-1. Discover skills at given path
-2. For each skill with an EVAL.md:
+1. Verify pi is installed and reachable
+2. Discover skills at given path
+3. For each skill with an EVAL.md:
    a. Parse EVAL.md frontmatter and test definitions
    b. Validate test structure (inputs exist, graders available)
-   c. For each test:
-      i.   Prepare prompt (skill instructions + test prompt + input fixtures)
-      ii.  Send to model (repeat for `runs` count)
-      iii. Grade each response against expectations
-      iv.  Collect results
-   d. Aggregate and report results
-3. Exit with appropriate code
+   c. Build AgentConfig from frontmatter + CLI overrides
+   d. For each test:
+      i.   Build pi command (--skill for with-skill, --no-skills for baseline)
+      ii.  Spawn pi subprocess with timeout (repeat for `runs` count)
+      iii. Capture stdout/stderr and exit code
+      iv.  Grade output against expectations
+      v.   Collect results
+   e. Aggregate and report results
+4. Exit with appropriate code
 ```
 
 ## Future Extensions
@@ -715,8 +815,9 @@ pub enum TestStatus {
 - **Baseline comparisons**: Compare current results against a saved baseline
 - **Parallel execution**: Run independent tests concurrently
 - **Eval sharing**: Publish eval suites alongside skills for community benchmarking
-- **Provider abstraction**: Pluggable model backends (OpenAI, Anthropic, local models)
+- **Alternative agent runtimes**: Support other agent CLIs beyond Pi Mono (e.g., Claude Code, Codex) via a pluggable runner interface
 - **Coverage metrics**: Measure which skill instructions are exercised by the eval suite
+- **Structured output parsing**: Leverage `pi --mode json` for machine-readable agent output when available
 
 ## References
 
