@@ -4,6 +4,7 @@
 setup:
 	rustup component add rustfmt clippy
 	cargo fetch
+	lefthook install
 
 # Cleanup compilation outputs
 clean:

@@ -427,6 +427,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore] // requires network access and is slow (~60s) due to HTTPS + SSH fallback
     fn test_fetch_nonexistent_repo() {
         let source = GitSource {
             url: "https://github.com/nonexistent-owner-xyz/nonexistent-repo-xyz.git".to_string(),

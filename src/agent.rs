@@ -36,6 +36,8 @@ pub enum Agent {
     Droid,
     /// Windsurf by Codeium.
     Windsurf,
+    /// Pi Mono.
+    PiMono,
 }
 
 /// Agent feature support flags.
@@ -82,6 +84,7 @@ impl Agent {
             Agent::Clawdbot,
             Agent::Droid,
             Agent::Windsurf,
+            Agent::PiMono,
         ]
     }
 
@@ -102,6 +105,7 @@ impl Agent {
             Agent::Clawdbot => "skills",
             Agent::Droid => ".factory/skills",
             Agent::Windsurf => ".windsurf/skills",
+            Agent::PiMono => ".pi/agent/skills",
         }
     }
 
@@ -122,6 +126,7 @@ impl Agent {
             Agent::Clawdbot => "~/.clawdbot/skills",
             Agent::Droid => "~/.factory/skills",
             Agent::Windsurf => "~/.codeium/windsurf/skills",
+            Agent::PiMono => "~/.pi/agent/skills",
         }
     }
 
@@ -142,6 +147,7 @@ impl Agent {
             Agent::Clawdbot => "Clawdbot",
             Agent::Droid => "Droid",
             Agent::Windsurf => "Windsurf",
+            Agent::PiMono => "Pi Mono",
         }
     }
 
@@ -162,6 +168,7 @@ impl Agent {
             Agent::Clawdbot => "clawdbot",
             Agent::Droid => "droid",
             Agent::Windsurf => "windsurf",
+            Agent::PiMono => "pi-mono",
         }
     }
 
@@ -174,12 +181,14 @@ impl Agent {
                 allowed_tools: true,
                 scripts: true,
             },
-            Agent::Cursor | Agent::Codex | Agent::OpenCode | Agent::Antigravity => AgentFeatures {
-                context_fork: false,
-                hooks: false,
-                allowed_tools: true, // Partial support
-                scripts: true,
-            },
+            Agent::Cursor | Agent::Codex | Agent::OpenCode | Agent::Antigravity | Agent::PiMono => {
+                AgentFeatures {
+                    context_fork: false,
+                    hooks: false,
+                    allowed_tools: true, // Partial support
+                    scripts: true,
+                }
+            }
             _ => AgentFeatures {
                 context_fork: false,
                 hooks: false,
@@ -206,6 +215,7 @@ impl Agent {
             Agent::Clawdbot => "skills", // Special case: no dot prefix
             Agent::Droid => ".factory",
             Agent::Windsurf => ".windsurf",
+            Agent::PiMono => ".pi",
         }
     }
 
@@ -226,6 +236,7 @@ impl Agent {
             Agent::Clawdbot => "~/.clawdbot",
             Agent::Droid => "~/.factory",
             Agent::Windsurf => "~/.codeium/windsurf",
+            Agent::PiMono => "~/.pi",
         }
     }
 

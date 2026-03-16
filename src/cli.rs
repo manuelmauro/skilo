@@ -134,6 +134,12 @@ pub struct AddArgs {
     #[arg(long, short = 't')]
     pub tag: Option<String>,
 
+    /// Only import skills from a specific subdirectory within the source
+    ///
+    /// Example: --path moonbeam-engineering
+    #[arg(long, short)]
+    pub path: Option<String>,
+
     /// Target agent(s) (determines install directory)
     ///
     /// Can be specified multiple times: --agent claude --agent cursor
@@ -192,6 +198,8 @@ pub enum Agent {
     Droid,
     /// Windsurf
     Windsurf,
+    /// Pi Mono
+    PiMono,
 }
 
 impl Agent {
@@ -213,6 +221,7 @@ impl Agent {
             Agent::Clawdbot => AgentSelection::Single(crate::agent::Agent::Clawdbot),
             Agent::Droid => AgentSelection::Single(crate::agent::Agent::Droid),
             Agent::Windsurf => AgentSelection::Single(crate::agent::Agent::Windsurf),
+            Agent::PiMono => AgentSelection::Single(crate::agent::Agent::PiMono),
         }
     }
 }
