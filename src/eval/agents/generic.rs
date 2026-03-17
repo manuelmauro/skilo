@@ -46,7 +46,35 @@ impl GenericRunner {
     }
 
     /// Resolve the skills directory to an absolute path.
-    fn resolve_skills_dir(&self) -> PathBuf {
+    ///
+    /// Walks up from `skill_path` looking for the agent's config directory
+    /// (the first component of `self.skills_dir`, e.g., `.codex`), falling
+    /// back to the current working directory.
+    fn resolve_skills_dir(&self, skill_path: &Path) -> PathBuf {
+        // Extract the agent config dir (e.g., ".codex" from ".codex/skills").
+        let agent_dir = Path::new(&self.skills_dir)
+            .components()
+            .next()
+            .map(|c| c.as_os_str().to_string_lossy().to_string());
+
+        if let Some(ref agent_dir) = agent_dir {
+            let start = if skill_path.is_absolute() {
+                skill_path.to_path_buf()
+            } else {
+                std::env::current_dir()
+                    .unwrap_or_else(|_| PathBuf::from("."))
+                    .join(skill_path)
+            };
+            let mut dir = start.as_path();
+            while let Some(parent) = dir.parent() {
+                if parent.join(agent_dir).exists() {
+                    return parent.join(&self.skills_dir);
+                }
+                dir = parent;
+            }
+        }
+
+        // Fallback: use CWD.
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         cwd.join(&self.skills_dir)
     }
@@ -62,7 +90,7 @@ impl GenericRunner {
 
         let unique_id = format!("{}_{}", std::process::id(), timestamp_nanos());
         let installed_name = format!("_skilo_eval_{skill_name}_{unique_id}");
-        let skills_dir = self.resolve_skills_dir();
+        let skills_dir = self.resolve_skills_dir(skill_path);
         let target = skills_dir.join(&installed_name);
 
         std::fs::create_dir_all(&skills_dir).map_err(|e| {
@@ -136,19 +164,22 @@ fn timestamp_nanos() -> u128 {
         .unwrap_or(0)
 }
 
-/// Recursively copy a directory.
+/// Recursively copy a directory, skipping symlinks to prevent traversal.
 fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dst)?;
 
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
-        let src_path = entry.path();
+        let file_type = entry.file_type()?;
         let dst_path = dst.join(entry.file_name());
 
-        if src_path.is_dir() {
-            copy_dir_recursive(&src_path, &dst_path)?;
-        } else {
-            std::fs::copy(&src_path, &dst_path)?;
+        if file_type.is_symlink() {
+            // Skip symlinks to avoid traversal outside the skill directory.
+            continue;
+        } else if file_type.is_dir() {
+            copy_dir_recursive(&entry.path(), &dst_path)?;
+        } else if file_type.is_file() {
+            std::fs::copy(entry.path(), &dst_path)?;
         }
     }
 
