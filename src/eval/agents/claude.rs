@@ -44,8 +44,26 @@ impl ClaudeRunner {
 
     /// Determine the skills directory for Claude Code.
     ///
-    /// Uses the current working directory as the project root.
-    fn skills_dir() -> PathBuf {
+    /// Resolves relative to the skill's project root by walking up from
+    /// `skill_path` to find an existing `.claude/` directory, falling back
+    /// to the current working directory.
+    fn skills_dir(skill_path: &Path) -> PathBuf {
+        // Walk up from the skill path looking for an existing .claude directory.
+        let start = if skill_path.is_absolute() {
+            skill_path.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join(skill_path)
+        };
+        let mut dir = start.as_path();
+        while let Some(parent) = dir.parent() {
+            if parent.join(".claude").exists() {
+                return parent.join(".claude").join("skills");
+            }
+            dir = parent;
+        }
+        // Fallback: use CWD.
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         cwd.join(".claude").join("skills")
     }
@@ -53,6 +71,8 @@ impl ClaudeRunner {
     /// Install a skill by copying it into Claude's skills directory.
     ///
     /// Returns the path to the installed skill (for cleanup).
+    /// Uses PID + timestamp to create a unique directory name, preventing
+    /// collisions when running concurrent evals.
     fn install_skill(skill_path: &Path) -> Result<PathBuf, AgentError> {
         let skill_name = skill_path
             .file_name()
@@ -61,12 +81,13 @@ impl ClaudeRunner {
                 AgentError::SkillSetupFailed("Invalid skill directory name".to_string())
             })?;
 
-        // Use a unique prefix to avoid collisions with existing skills.
-        let installed_name = format!("_skilo_eval_{}", skill_name);
-        let target = Self::skills_dir().join(&installed_name);
+        // Use PID + timestamp for a unique staging directory.
+        let unique_id = format!("{}_{}", std::process::id(), timestamp_nanos());
+        let installed_name = format!("_skilo_eval_{skill_name}_{unique_id}");
+        let target = Self::skills_dir(skill_path).join(&installed_name);
 
         // Create the skills directory if it doesn't exist.
-        std::fs::create_dir_all(Self::skills_dir()).map_err(|e| {
+        std::fs::create_dir_all(Self::skills_dir(skill_path)).map_err(|e| {
             AgentError::SkillSetupFailed(format!("Failed to create skills directory: {}", e))
         })?;
 
@@ -123,6 +144,14 @@ impl AgentRunner for ClaudeRunner {
     fn display_name(&self) -> &str {
         "Claude Code"
     }
+}
+
+/// Return a nanosecond timestamp for unique naming.
+fn timestamp_nanos() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0)
 }
 
 /// Recursively copy a directory.

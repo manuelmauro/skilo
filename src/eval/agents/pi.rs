@@ -63,7 +63,8 @@ impl AgentRunner for PiRunner {
         timeout_secs: u64,
     ) -> Result<AgentOutput, AgentError> {
         let mut cmd = self.base_command();
-        cmd.args(["--skill", &skill_path.display().to_string()]);
+        cmd.arg("--skill");
+        cmd.arg(skill_path);
         cmd.arg(prompt);
         execute_command(cmd, timeout_secs)
     }

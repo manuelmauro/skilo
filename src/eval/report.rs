@@ -31,7 +31,10 @@ fn format_text(skill_name: &str, results: &[TestResult]) -> String {
         .iter()
         .filter(|r| r.status == TestStatus::Passed)
         .count();
-    let failed = total - passed;
+    let failed = results
+        .iter()
+        .filter(|r| r.status == TestStatus::Failed || r.status == TestStatus::TimedOut)
+        .count();
 
     let total_duration: Duration = results.iter().map(|r| r.total_duration()).sum();
 
@@ -143,7 +146,10 @@ fn format_json(skill_name: &str, results: &[TestResult]) -> String {
         .iter()
         .filter(|r| r.status == TestStatus::Passed)
         .count();
-    let failed = total - passed;
+    let failed = results
+        .iter()
+        .filter(|r| r.status == TestStatus::Failed || r.status == TestStatus::TimedOut)
+        .count();
     let total_duration_ms: u128 = results.iter().map(|r| r.total_duration().as_millis()).sum();
 
     let count_by = |cat: TestCategory, passed_only: bool| -> usize {
@@ -248,7 +254,7 @@ fn format_markdown(skill_name: &str, results: &[TestResult]) -> String {
             let icon = status_icon(&r.status);
             out.push_str(&format!(
                 "| {} | {} | {:.1}s |\n",
-                r.name,
+                escape_md_cell(&r.name),
                 icon,
                 r.total_duration().as_secs_f64()
             ));
@@ -272,7 +278,7 @@ fn format_markdown(skill_name: &str, results: &[TestResult]) -> String {
             let icon = status_icon(&r.status);
             out.push_str(&format!(
                 "| {} | {} | {:.1}s | {}/{} |\n",
-                r.name,
+                escape_md_cell(&r.name),
                 icon,
                 r.total_duration().as_secs_f64(),
                 r.passed_count(),
@@ -298,7 +304,7 @@ fn format_markdown(skill_name: &str, results: &[TestResult]) -> String {
             let icon = status_icon(&r.status);
             out.push_str(&format!(
                 "| {} | {} | {:.1}s |\n",
-                r.name,
+                escape_md_cell(&r.name),
                 icon,
                 r.total_duration().as_secs_f64()
             ));
@@ -307,6 +313,11 @@ fn format_markdown(skill_name: &str, results: &[TestResult]) -> String {
     }
 
     out
+}
+
+/// Escape a string for use in a Markdown table cell.
+fn escape_md_cell(s: &str) -> String {
+    s.replace('|', "\\|").replace('\n', " ")
 }
 
 fn status_icon(status: &TestStatus) -> &'static str {

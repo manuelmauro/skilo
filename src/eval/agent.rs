@@ -146,8 +146,11 @@ pub fn execute_command(mut cmd: Command, timeout_secs: u64) -> Result<AgentOutpu
 }
 
 /// Verify that a binary is available on PATH.
+///
+/// Uses `which` on Unix and `where` on Windows.
 pub fn verify_binary(bin: &str) -> Result<(), AgentError> {
-    let output = Command::new("which")
+    let lookup_cmd = if cfg!(windows) { "where" } else { "which" };
+    let output = Command::new(lookup_cmd)
         .arg(bin)
         .output()
         .map_err(AgentError::SpawnFailed)?;

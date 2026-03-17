@@ -60,7 +60,8 @@ impl GenericRunner {
                 AgentError::SkillSetupFailed("Invalid skill directory name".to_string())
             })?;
 
-        let installed_name = format!("_skilo_eval_{}", skill_name);
+        let unique_id = format!("{}_{}", std::process::id(), timestamp_nanos());
+        let installed_name = format!("_skilo_eval_{skill_name}_{unique_id}");
         let skills_dir = self.resolve_skills_dir();
         let target = skills_dir.join(&installed_name);
 
@@ -125,6 +126,14 @@ impl AgentRunner for GenericRunner {
     fn display_name(&self) -> &str {
         &self.name
     }
+}
+
+/// Return a nanosecond timestamp for unique naming.
+fn timestamp_nanos() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0)
 }
 
 /// Recursively copy a directory.

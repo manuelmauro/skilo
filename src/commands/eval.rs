@@ -185,19 +185,11 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             thinking,
         }),
         "claude" => Box::new(ClaudeRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "claude".into()),
+            bin: "claude".into(),
             model,
         }),
         "codex" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "codex".into()),
+            bin: "codex".into(),
             name: "Codex".into(),
             non_interactive_flags: vec!["--quiet".into()],
             prompt_flags: vec![],
@@ -206,11 +198,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".codex/skills".into(),
         }),
         "cursor" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "cursor".into()),
+            bin: "cursor".into(),
             name: "Cursor".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -219,11 +207,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".cursor/skills".into(),
         }),
         "amp" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "amp".into()),
+            bin: "amp".into(),
             name: "Amp".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -232,11 +216,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".agents/skills".into(),
         }),
         "goose" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "goose".into()),
+            bin: "goose".into(),
             name: "Goose".into(),
             non_interactive_flags: vec!["run".into()],
             prompt_flags: vec![],
@@ -245,11 +225,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".goose/skills".into(),
         }),
         "gemini" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "gemini".into()),
+            bin: "gemini".into(),
             name: "Gemini CLI".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -258,11 +234,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".gemini/skills".into(),
         }),
         "opencode" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "opencode".into()),
+            bin: "opencode".into(),
             name: "OpenCode".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -271,11 +243,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".opencode/skill".into(),
         }),
         "kilocode" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "kilocode".into()),
+            bin: "kilocode".into(),
             name: "Kilo Code".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -284,11 +252,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".kilocode/skills".into(),
         }),
         "roocode" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "roocode".into()),
+            bin: "roocode".into(),
             name: "Roo Code".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -297,11 +261,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".roo/skills".into(),
         }),
         "antigravity" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "antigravity".into()),
+            bin: "antigravity".into(),
             name: "Antigravity".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -310,11 +270,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".agent/skills".into(),
         }),
         "copilot" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "copilot".into()),
+            bin: "copilot".into(),
             name: "GitHub Copilot".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],
@@ -323,11 +279,7 @@ fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Bo
             skills_dir: ".github/skills".into(),
         }),
         "windsurf" => Box::new(GenericRunner {
-            bin: config
-                .eval
-                .agent_bin
-                .clone()
-                .unwrap_or_else(|| "windsurf".into()),
+            bin: "windsurf".into(),
             name: "Windsurf".into(),
             non_interactive_flags: vec![],
             prompt_flags: vec![],

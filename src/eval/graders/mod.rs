@@ -43,10 +43,11 @@ pub fn grade_output(
                 },
             },
             Expectation::Rubric(text) => {
-                // Rubric expectations are for LLM grading — always pass in non-LLM mode.
+                // Rubric expectations require the LLM grader — fail when not active
+                // so rubric-only tests don't silently go green.
                 GradeResult {
-                    passed: true,
-                    message: format!("Rubric (skipped, LLM grader not active): {}", text),
+                    passed: false,
+                    message: format!("Rubric not evaluated (LLM grader not active): {}", text),
                 }
             }
         })
