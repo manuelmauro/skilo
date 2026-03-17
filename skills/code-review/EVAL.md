@@ -21,7 +21,7 @@ Verify the skill is aware of the code review checklist.
 
 ### Prompt
 
-```
+```text
 List the code review checklist items from the code-review skill. Just list them, don't run any commands.
 ```
 
