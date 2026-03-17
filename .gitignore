@@ -2,3 +2,18 @@
 
 # OS
 .DS_Store
+
+# Coding agent directories
+.claude/
+.codex/
+.cursor/
+.opencode/
+.agents/
+.kilocode/
+.roo/
+.goose/
+.gemini/
+.agent/
+.factory/
+.windsurf/
+.pi/
