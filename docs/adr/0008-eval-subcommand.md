@@ -240,7 +240,7 @@ Run the same prompt without the skill enabled.
 
 ### Section Prefixes
 
-Each `## ` heading in the EVAL.md body uses a prefix to declare its test category:
+Each level-2 (`##`) heading in the EVAL.md body uses a prefix to declare its test category:
 
 | Prefix       | Category               | Description                                    |
 | ------------ | ---------------------- | ---------------------------------------------- |
