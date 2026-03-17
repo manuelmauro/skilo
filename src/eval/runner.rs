@@ -129,9 +129,9 @@ pub fn run_suite(
             });
 
             if options.fail_fast
-                && results
-                    .last()
-                    .is_some_and(|r| r.status == TestStatus::Failed)
+                && results.last().is_some_and(|r| {
+                    r.status == TestStatus::Failed || r.status == TestStatus::TimedOut
+                })
             {
                 return results;
             }
@@ -163,9 +163,9 @@ pub fn run_suite(
             });
 
             if options.fail_fast
-                && results
-                    .last()
-                    .is_some_and(|r| r.status == TestStatus::Failed)
+                && results.last().is_some_and(|r| {
+                    r.status == TestStatus::Failed || r.status == TestStatus::TimedOut
+                })
             {
                 return results;
             }
@@ -192,9 +192,9 @@ pub fn run_suite(
             });
 
             if options.fail_fast
-                && results
-                    .last()
-                    .is_some_and(|r| r.status == TestStatus::Failed)
+                && results.last().is_some_and(|r| {
+                    r.status == TestStatus::Failed || r.status == TestStatus::TimedOut
+                })
             {
                 return results;
             }
@@ -207,6 +207,8 @@ pub fn run_suite(
 fn aggregate_status(runs: &[TestRunResult]) -> TestStatus {
     if runs.iter().all(|r| r.status == TestStatus::Passed) {
         TestStatus::Passed
+    } else if runs.iter().all(|r| r.status == TestStatus::Skipped) {
+        TestStatus::Skipped
     } else if runs.iter().any(|r| r.status == TestStatus::TimedOut) {
         TestStatus::TimedOut
     } else {

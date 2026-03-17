@@ -168,6 +168,8 @@ pub enum GraderKind {
 /// A single expectation within a test.
 #[derive(Debug, Clone)]
 pub enum Expectation {
+    /// Output must match this string exactly.
+    Exact(String),
     /// Output must contain this substring.
     Contains(String),
     /// Output must not contain this substring.
@@ -366,12 +368,22 @@ fn parse_grader_kind(s: &str, skill_path: &Path) -> Result<GraderKind, EvalParse
         "regex" => Ok(GraderKind::Regex),
         "llm" => Ok(GraderKind::Llm),
         other => {
-            // Treat as script path relative to skill directory.
-            let script_path = skill_path
-                .parent()
-                .unwrap_or_else(|| Path::new("."))
-                .join(other);
-            Ok(GraderKind::Script(script_path))
+            // Treat as a script path relative to the skill directory.
+            // skill_path is the directory containing EVAL.md (parent of the EVAL.md file).
+            let script_path = skill_path.join(other);
+            if script_path.exists() {
+                Ok(GraderKind::Script(script_path))
+            } else {
+                Err(EvalParseError::InvalidSection {
+                    name: "frontmatter".into(),
+                    reason: format!(
+                        "Unknown grader '{}'. Expected 'exact', 'contains', 'regex', 'llm', \
+                         or a path to a grader script (not found: {})",
+                        other,
+                        script_path.display()
+                    ),
+                })
+            }
         }
     }
 }
@@ -451,7 +463,9 @@ fn parse_expectations(body: &str, _default_grader: &GraderKind) -> Vec<Expectati
 
     for line in expected.lines() {
         let line = line.trim();
-        if let Some(rest) = line.strip_prefix("- Contains:") {
+        if let Some(rest) = line.strip_prefix("- Exact:") {
+            expectations.push(Expectation::Exact(unquote(rest.trim())));
+        } else if let Some(rest) = line.strip_prefix("- Contains:") {
             expectations.push(Expectation::Contains(unquote(rest.trim())));
         } else if let Some(rest) = line.strip_prefix("- Not contains:") {
             expectations.push(Expectation::NotContains(unquote(rest.trim())));
@@ -553,10 +567,37 @@ fn extract_subsection_list(body: &str, heading: &str) -> Vec<String> {
 fn unquote(s: &str) -> String {
     let s = s.trim();
     if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
-        s[1..s.len() - 1].to_string()
+        let inner = &s[1..s.len() - 1];
+        // Unescape common escape sequences inside quoted strings.
+        unescape(inner)
     } else {
         s.to_string()
     }
+}
+
+/// Unescape common escape sequences: \\, \", \', \n, \t.
+fn unescape(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            match chars.next() {
+                Some('\\') => result.push('\\'),
+                Some('"') => result.push('"'),
+                Some('\'') => result.push('\''),
+                Some('n') => result.push('\n'),
+                Some('t') => result.push('\t'),
+                Some(other) => {
+                    result.push('\\');
+                    result.push(other);
+                }
+                None => result.push('\\'),
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
 }
 
 fn unquote_backtick(s: &str) -> String {

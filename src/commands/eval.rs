@@ -1,6 +1,6 @@
 //! The `eval` command implementation.
 
-use crate::cli::{Cli, EvalAgent, EvalArgs, EvalCommand};
+use crate::cli::{Cli, EvalAgent, EvalArgs, EvalCommand, EvalFormat};
 use crate::config::Config;
 use crate::error::SkiloError;
 use crate::eval::agents::{ClaudeRunner, GenericRunner, PiRunner};
@@ -64,10 +64,10 @@ fn run_eval(args: EvalArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloErro
     }
 
     // Build agent config from args + config + suite frontmatter.
-    let report_format = match args.eval_format.as_deref() {
-        Some("json") => ReportFormat::Json,
-        Some("markdown") => ReportFormat::Markdown,
-        _ => ReportFormat::Text,
+    let report_format = match args.eval_format {
+        Some(EvalFormat::Json) => ReportFormat::Json,
+        Some(EvalFormat::Markdown) => ReportFormat::Markdown,
+        Some(EvalFormat::Text) | None => ReportFormat::Text,
     };
 
     let mut overall_exit = 0;
@@ -110,7 +110,7 @@ fn run_eval(args: EvalArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloErro
             test_filter: args.test.clone(),
             category_filter: args.category.clone(),
             fail_fast: args.fail_fast,
-            verbose: args.verbose || !cli.quiet,
+            verbose: args.verbose && !cli.quiet,
         };
 
         // Run the suite.

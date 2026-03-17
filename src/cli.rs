@@ -535,9 +535,9 @@ pub struct EvalArgs {
     #[arg(long)]
     pub timeout: Option<u64>,
 
-    /// Eval output format: text, json, markdown
-    #[arg(long = "eval-format")]
-    pub eval_format: Option<String>,
+    /// Eval output format
+    #[arg(long = "eval-format", value_enum)]
+    pub eval_format: Option<EvalFormat>,
 
     /// Stop on first failure
     #[arg(long)]
@@ -565,6 +565,17 @@ pub struct EvalInitArgs {
     /// Path to skill directory
     #[arg(default_value = ".")]
     pub path: PathBuf,
+}
+
+/// Output format for eval results.
+#[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EvalFormat {
+    /// Human-readable text output.
+    Text,
+    /// JSON output.
+    Json,
+    /// Markdown table output.
+    Markdown,
 }
 
 /// Supported agent harnesses for `skilo eval`.

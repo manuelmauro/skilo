@@ -24,9 +24,10 @@ impl ScriptGrader {
             .stderr(std::process::Stdio::piped())
             .spawn()
             .and_then(|mut child| {
-                if let Some(ref mut stdin) = child.stdin {
+                if let Some(ref mut stdin) = child.stdin.take() {
                     use std::io::Write;
-                    let _ = stdin.write_all(output.as_bytes());
+                    stdin.write_all(output.as_bytes())?;
+                    // Drop stdin to signal EOF so the child can proceed.
                 }
                 child.wait_with_output()
             });

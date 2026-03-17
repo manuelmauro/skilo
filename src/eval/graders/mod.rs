@@ -30,6 +30,7 @@ pub fn grade_output(
     expectations
         .iter()
         .map(|exp| match exp {
+            Expectation::Exact(s) => ExactGrader::grade(output, s),
             Expectation::Contains(s) => ContainsGrader::grade(output, s),
             Expectation::NotContains(s) => ContainsGrader::grade_not(output, s),
             Expectation::Regex(pattern) => RegexGrader::grade(output, pattern),

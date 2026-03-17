@@ -124,7 +124,7 @@ Run the same prompt **without** the skill enabled.
 
 Evals are defined in an `EVAL.md` file placed inside the skill directory alongside `SKILL.md`:
 
-```
+```text
 my-skill/
 ├── SKILL.md
 ├── EVAL.md            # Evaluation definitions
@@ -373,7 +373,7 @@ Created my-skill/evals/graders/
 
 #### Text (default)
 
-```
+```text
 Evaluating: my-skill (6 tests, 1 run each)
 
 Triggering:
@@ -597,7 +597,7 @@ This allows evals to be included in CI pipelines alongside existing validation:
 
 ### Module Structure
 
-```
+```text
 src/
 ├── commands/
 │   ├── eval.rs          # Eval subcommand entry point
@@ -792,7 +792,7 @@ For each test category, the invocation pattern differs:
 
 ### Execution Flow
 
-```
+```text
 1. Verify pi is installed and reachable
 2. Discover skills at given path
 3. For each skill with an EVAL.md:

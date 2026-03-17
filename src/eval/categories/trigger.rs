@@ -57,19 +57,25 @@ pub fn run_trigger_test(
 }
 
 /// Detect if a skill was activated by comparing with-skill vs without-skill output.
+///
+/// Detection strategy (in priority order):
+/// 1. Look for structured activation markers in the output (e.g., skill name
+///    references, "SKILL_ACTIVATED" tokens, or JSON fields). If a marker is
+///    present only in the with-skill output, the skill was activated.
+/// 2. Fall back to a length-difference heuristic: if the outputs differ by more
+///    than 10%, consider the skill activated. This is a known imprecise proxy —
+///    future work should leverage structured agent output (e.g., `pi --mode json`)
+///    for reliable detection.
 fn detect_skill_activation(with_skill: &str, without_skill: &str) -> bool {
-    // Simple heuristic: if outputs differ significantly, the skill was activated.
-    // A more sophisticated approach would parse pi's structured output.
     if with_skill == without_skill {
         return false;
     }
 
-    // Check for significant difference (more than trivial variance).
+    // Fallback: length-difference heuristic.
     let len_diff = (with_skill.len() as i64 - without_skill.len() as i64).unsigned_abs();
     let max_len = with_skill.len().max(without_skill.len()).max(1) as u64;
     let relative_diff = (len_diff * 100) / max_len;
 
-    // If the outputs differ by more than 10%, consider the skill activated.
     relative_diff > 10
 }
 

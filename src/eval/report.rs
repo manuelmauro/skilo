@@ -146,32 +146,21 @@ fn format_json(skill_name: &str, results: &[TestResult]) -> String {
     let failed = total - passed;
     let total_duration_ms: u128 = results.iter().map(|r| r.total_duration().as_millis()).sum();
 
-    let trigger_total = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Trigger)
-        .count();
-    let trigger_passed = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Trigger && r.status == TestStatus::Passed)
-        .count();
-    let func_total = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Functional)
-        .count();
-    let func_passed = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Functional && r.status == TestStatus::Passed)
-        .count();
-    let perf_total = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Perf)
-        .count();
-    let perf_passed = results
-        .iter()
-        .filter(|r| r.category == TestCategory::Perf && r.status == TestStatus::Passed)
-        .count();
+    let count_by = |cat: TestCategory, passed_only: bool| -> usize {
+        results
+            .iter()
+            .filter(|r| r.category == cat && (!passed_only || r.status == TestStatus::Passed))
+            .count()
+    };
 
-    let tests_json: Vec<String> = results
+    let trigger_total = count_by(TestCategory::Trigger, false);
+    let trigger_passed = count_by(TestCategory::Trigger, true);
+    let func_total = count_by(TestCategory::Functional, false);
+    let func_passed = count_by(TestCategory::Functional, true);
+    let perf_total = count_by(TestCategory::Perf, false);
+    let perf_passed = count_by(TestCategory::Perf, true);
+
+    let tests_json: Vec<serde_json::Value> = results
         .iter()
         .map(|r| {
             let cat = match r.category {
@@ -179,69 +168,48 @@ fn format_json(skill_name: &str, results: &[TestResult]) -> String {
                 TestCategory::Functional => "functional",
                 TestCategory::Perf => "perf",
             };
-            let status = match r.status {
-                TestStatus::Passed => "passed",
-                TestStatus::Failed => "failed",
-                TestStatus::Skipped => "skipped",
-                TestStatus::TimedOut => "timed_out",
-            };
-            let runs_json: Vec<String> = r
+            let status = status_str(&r.status);
+            let runs: Vec<serde_json::Value> = r
                 .runs
                 .iter()
                 .map(|run| {
-                    let run_status = match run.status {
-                        TestStatus::Passed => "passed",
-                        TestStatus::Failed => "failed",
-                        TestStatus::Skipped => "skipped",
-                        TestStatus::TimedOut => "timed_out",
-                    };
-                    format!(
-                        "{{\"run\":{},\"status\":\"{}\",\"duration_ms\":{}}}",
-                        run.run,
-                        run_status,
-                        run.duration.as_millis()
-                    )
+                    serde_json::json!({
+                        "run": run.run,
+                        "status": status_str(&run.status),
+                        "duration_ms": run.duration.as_millis() as u64,
+                    })
                 })
                 .collect();
-            format!(
-                "{{\"name\":\"{}\",\"category\":\"{}\",\"status\":\"{}\",\"runs\":[{}]}}",
-                r.name,
-                cat,
-                status,
-                runs_json.join(",")
-            )
+            serde_json::json!({
+                "name": r.name,
+                "category": cat,
+                "status": status,
+                "runs": runs,
+            })
         })
         .collect();
 
-    format!(
-        concat!(
-            "{{",
-            "\"skill\":\"{}\",",
-            "\"categories\":{{",
-            "\"trigger\":{{\"total\":{},\"passed\":{},\"failed\":{}}},",
-            "\"functional\":{{\"total\":{},\"passed\":{},\"failed\":{}}},",
-            "\"perf\":{{\"total\":{},\"passed\":{},\"failed\":{}}}",
-            "}},",
-            "\"tests\":[{}],",
-            "\"summary\":{{\"total\":{},\"passed\":{},\"failed\":{},\"duration_ms\":{}}}",
-            "}}"
-        ),
-        skill_name,
-        trigger_total,
-        trigger_passed,
-        trigger_total - trigger_passed,
-        func_total,
-        func_passed,
-        func_total - func_passed,
-        perf_total,
-        perf_passed,
-        perf_total - perf_passed,
-        tests_json.join(","),
-        total,
-        passed,
-        failed,
-        total_duration_ms,
-    )
+    let report = serde_json::json!({
+        "skill": skill_name,
+        "categories": {
+            "trigger": { "total": trigger_total, "passed": trigger_passed, "failed": trigger_total - trigger_passed },
+            "functional": { "total": func_total, "passed": func_passed, "failed": func_total - func_passed },
+            "perf": { "total": perf_total, "passed": perf_passed, "failed": perf_total - perf_passed },
+        },
+        "tests": tests_json,
+        "summary": { "total": total, "passed": passed, "failed": failed, "duration_ms": total_duration_ms as u64 },
+    });
+
+    serde_json::to_string(&report).unwrap_or_else(|_| "{}".to_string())
+}
+
+fn status_str(status: &TestStatus) -> &'static str {
+    match status {
+        TestStatus::Passed => "passed",
+        TestStatus::Failed => "failed",
+        TestStatus::Skipped => "skipped",
+        TestStatus::TimedOut => "timed_out",
+    }
 }
 
 // ── Markdown format ───────────────────────────────────────────────

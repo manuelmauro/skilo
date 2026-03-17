@@ -19,17 +19,6 @@ pub struct RunMetrics {
     pub exit_code: i32,
 }
 
-/// Result of a perf comparison.
-#[derive(Debug)]
-pub struct PerfComparison {
-    /// Skill run metrics.
-    pub skill: RunMetrics,
-    /// Baseline (no-skill) run metrics.
-    pub baseline: RunMetrics,
-    /// Per-metric assertion results.
-    pub assertions: Vec<(String, bool, String)>,
-}
-
 /// Run a single performance comparison test.
 pub fn run_perf_test(
     test: &PerfTest,
@@ -105,12 +94,21 @@ fn evaluate_metric(
                 assertion,
             )
         }
-        PerfMetric::MessageCount(assertion) => {
-            // Not directly measurable via agent output; use a placeholder.
-            evaluate_assertion("message_count", 0, 0, assertion)
+        PerfMetric::MessageCount(_) => {
+            // Not directly measurable via agent output.
+            (
+                "message_count".to_string(),
+                true,
+                "skipped (not measurable from agent output)".to_string(),
+            )
         }
-        PerfMetric::ToolCallCount(assertion) => {
-            evaluate_assertion("tool_call_count", 0, 0, assertion)
+        PerfMetric::ToolCallCount(_) => {
+            // Not directly measurable via agent output.
+            (
+                "tool_call_count".to_string(),
+                true,
+                "skipped (not measurable from agent output)".to_string(),
+            )
         }
         PerfMetric::ErrorCount(assertion) => {
             let skill_errors = if skill.exit_code != 0 { 1 } else { 0 };

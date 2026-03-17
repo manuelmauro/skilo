@@ -8,7 +8,7 @@ pub struct ExactGrader;
 impl ExactGrader {
     /// Check that `output` exactly matches `expected`.
     pub fn grade(output: &str, expected: &str) -> GradeResult {
-        let passed = output.trim() == expected.trim();
+        let passed = output == expected;
         GradeResult {
             passed,
             message: if passed {
@@ -24,11 +24,39 @@ impl ExactGrader {
     }
 }
 
+/// Truncate a string to at most `max` characters (not bytes), appending "..."
+/// if truncated. Safe for multibyte UTF-8.
 fn truncate(s: &str, max: usize) -> String {
-    let s = s.trim();
-    if s.len() <= max {
+    let char_count = s.chars().count();
+    if char_count <= max {
         s.to_string()
     } else {
-        format!("{}...", &s[..max])
+        let truncated: String = s.chars().take(max).collect();
+        format!("{}...", truncated)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_exact_match() {
+        let result = ExactGrader::grade("hello", "hello");
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_whitespace_sensitive() {
+        let result = ExactGrader::grade("hello ", "hello");
+        assert!(!result.passed);
+    }
+
+    #[test]
+    fn test_truncate_multibyte() {
+        // Should not panic on multibyte characters.
+        let s = "héllo wörld 🎉 test";
+        let t = truncate(s, 5);
+        assert_eq!(t, "héllo...");
     }
 }

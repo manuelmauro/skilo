@@ -17,7 +17,7 @@ pub fn run_functional_test(
     timeout: u64,
 ) -> Result<TestRunResult, AgentError> {
     // Build the full prompt including input fixtures.
-    let full_prompt = build_prompt(test);
+    let full_prompt = build_prompt(test)?;
 
     let output = agent.run_with_skill(skill_path, &full_prompt, timeout)?;
 
@@ -57,20 +57,25 @@ pub fn run_functional_test(
 }
 
 /// Build the full prompt from the test definition, including input fixtures.
-fn build_prompt(test: &FunctionalTest) -> String {
+fn build_prompt(test: &FunctionalTest) -> Result<String, AgentError> {
     let mut parts = vec![test.prompt.clone()];
 
     for input_path in &test.inputs {
-        if let Ok(content) = std::fs::read_to_string(input_path) {
-            parts.push(format!(
-                "\n--- Input: {} ---\n{}",
+        let content = std::fs::read_to_string(input_path).map_err(|e| {
+            AgentError::SkillSetupFailed(format!(
+                "Failed to read input fixture {}: {}",
                 input_path.display(),
-                content
-            ));
-        }
+                e
+            ))
+        })?;
+        parts.push(format!(
+            "\n--- Input: {} ---\n{}",
+            input_path.display(),
+            content
+        ));
     }
 
-    parts.join("\n")
+    Ok(parts.join("\n"))
 }
 
 /// Run a functional test with multiple runs and return all results.

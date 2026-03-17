@@ -4,7 +4,7 @@
 //! plus shared output/error types.
 
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::Command;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
@@ -74,7 +74,9 @@ pub trait AgentRunner: Send + Sync {
 
 /// Execute a command with a timeout and return the output.
 ///
-/// Shared helper used by all agent runner implementations.
+/// Stdout and stderr are drained in dedicated threads to avoid deadlocks
+/// when the child's pipe buffers fill. On timeout the child is killed and
+/// reaped to prevent zombie processes.
 pub fn execute_command(mut cmd: Command, timeout_secs: u64) -> Result<AgentOutput, AgentError> {
     let start = Instant::now();
 
@@ -84,21 +86,61 @@ pub fn execute_command(mut cmd: Command, timeout_secs: u64) -> Result<AgentOutpu
         .spawn()
         .map_err(AgentError::SpawnFailed)?;
 
+    // Take ownership of the pipes and drain them in background threads
+    // so the child never blocks on a full buffer.
+    let stdout_pipe = child.stdout.take();
+    let stderr_pipe = child.stderr.take();
+
+    let stdout_handle = std::thread::spawn(move || -> Vec<u8> {
+        let mut buf = Vec::new();
+        if let Some(mut pipe) = stdout_pipe {
+            use std::io::Read;
+            let _ = pipe.read_to_end(&mut buf);
+        }
+        buf
+    });
+
+    let stderr_handle = std::thread::spawn(move || -> Vec<u8> {
+        let mut buf = Vec::new();
+        if let Some(mut pipe) = stderr_pipe {
+            use std::io::Read;
+            let _ = pipe.read_to_end(&mut buf);
+        }
+        buf
+    });
+
     let timeout = Duration::from_secs(timeout_secs);
-    let output: Output = match wait_with_timeout(&mut child, timeout) {
-        Some(result) => result.map_err(AgentError::SpawnFailed)?,
-        None => {
-            let _ = child.kill();
-            return Err(AgentError::Timeout(timeout_secs));
+    let poll_interval = Duration::from_millis(100);
+
+    // Poll the child process with a timeout.
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) => {
+                if start.elapsed() > timeout {
+                    // Kill the child and reap it to avoid zombies.
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    // Join reader threads so they don't leak.
+                    let _ = stdout_handle.join();
+                    let _ = stderr_handle.join();
+                    return Err(AgentError::Timeout(timeout_secs));
+                }
+                std::thread::sleep(poll_interval);
+            }
+            Err(e) => return Err(AgentError::SpawnFailed(e)),
         }
     };
 
+    // Child exited — collect buffered output from reader threads.
+    let stdout = stdout_handle.join().unwrap_or_default();
+    let stderr = stderr_handle.join().unwrap_or_default();
     let duration = start.elapsed();
 
     Ok(AgentOutput {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
+        stdout: String::from_utf8_lossy(&stdout).to_string(),
+        stderr: String::from_utf8_lossy(&stderr).to_string(),
+        exit_code: status.code().unwrap_or(-1),
         duration,
     })
 }
@@ -116,44 +158,4 @@ pub fn verify_binary(bin: &str) -> Result<(), AgentError> {
         });
     }
     Ok(())
-}
-
-/// Wait for a child process with a timeout.
-fn wait_with_timeout(
-    child: &mut std::process::Child,
-    timeout: Duration,
-) -> Option<std::io::Result<Output>> {
-    let start = Instant::now();
-    let poll_interval = Duration::from_millis(100);
-
-    loop {
-        match child.try_wait() {
-            Ok(Some(_status)) => {
-                // Process exited — collect output.
-                let stdout = child.stdout.take().map_or_else(Vec::new, |mut s| {
-                    let mut buf = Vec::new();
-                    std::io::Read::read_to_end(&mut s, &mut buf).unwrap_or(0);
-                    buf
-                });
-                let stderr = child.stderr.take().map_or_else(Vec::new, |mut s| {
-                    let mut buf = Vec::new();
-                    std::io::Read::read_to_end(&mut s, &mut buf).unwrap_or(0);
-                    buf
-                });
-                return Some(Ok(Output {
-                    status: _status,
-                    stdout,
-                    stderr,
-                }));
-            }
-            Ok(None) => {
-                // Still running.
-                if start.elapsed() > timeout {
-                    return None;
-                }
-                std::thread::sleep(poll_interval);
-            }
-            Err(e) => return Some(Err(e)),
-        }
-    }
 }
