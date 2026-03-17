@@ -100,7 +100,7 @@ Compare with-skill vs. without-skill execution on the same prompt, measuring qua
 
 Example in `EVAL.md`:
 
-```markdown
+````markdown
 ## Perf: baseline-comparison
 
 ### Prompt
@@ -118,7 +118,7 @@ Run the same prompt **without** the skill enabled.
 - token_usage: < baseline
 - message_count: < baseline
 - error_count: 0
-```
+````
 
 ### Eval Specification
 
@@ -138,7 +138,7 @@ my-skill/
 
 ### EVAL.md Format
 
-```markdown
+````markdown
 ---
 name: my-skill-eval
 description: Evaluations for the my-skill skill.
@@ -223,7 +223,7 @@ Run the same prompt without the skill enabled.
 - token_usage: < baseline
 - message_count: < baseline
 - error_count: 0
-```
+````
 
 ### EVAL.md Frontmatter
 
