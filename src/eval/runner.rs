@@ -1,6 +1,6 @@
 //! Test execution orchestration.
 
-use crate::eval::agent::AgentConfig;
+use crate::eval::agent::AgentRunner;
 use crate::eval::categories::{functional, perf, trigger};
 use crate::eval::EvalSuite;
 use std::time::Duration;
@@ -90,7 +90,11 @@ pub struct RunOptions {
 }
 
 /// Run a full eval suite and return results.
-pub fn run_suite(suite: &EvalSuite, agent: &AgentConfig, options: &RunOptions) -> Vec<TestResult> {
+pub fn run_suite(
+    suite: &EvalSuite,
+    agent: &dyn AgentRunner,
+    options: &RunOptions,
+) -> Vec<TestResult> {
     let runs = options.runs.unwrap_or(suite.runs);
     let timeout = options.timeout.unwrap_or(suite.timeout);
     let mut results = Vec::new();

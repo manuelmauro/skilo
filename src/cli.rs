@@ -105,8 +105,9 @@ pub enum Command {
 
     /// Run evaluations for skills
     ///
-    /// Parses EVAL.md files and executes tests via the Pi agent.
+    /// Parses EVAL.md files and executes tests via an agent harness.
     /// Supports triggering, functional, and performance comparison tests.
+    /// Use --agent to select the agent (default: pi-mono).
     #[command(verbatim_doc_comment)]
     Eval(EvalArgs),
 
@@ -507,15 +508,22 @@ pub struct EvalArgs {
     #[arg(long)]
     pub category: Option<String>,
 
-    /// Override the model (passed to `pi --model`)
+    /// Agent harness to use for evaluation
+    ///
+    /// Supported agents: pi-mono (default), claude, codex, cursor, goose,
+    /// gemini, amp, and others. The agent binary must be installed and on PATH.
+    #[arg(long, value_enum)]
+    pub agent: Option<EvalAgent>,
+
+    /// Override the model (passed to agent's --model flag)
     #[arg(long)]
     pub model: Option<String>,
 
-    /// Override the provider (passed to `pi --provider`)
+    /// Override the provider (passed to agent's --provider flag)
     #[arg(long)]
     pub provider: Option<String>,
 
-    /// Override thinking level (passed to `pi --thinking`)
+    /// Override thinking level (passed to agent's --thinking flag)
     #[arg(long)]
     pub thinking: Option<String>,
 
@@ -557,6 +565,37 @@ pub struct EvalInitArgs {
     /// Path to skill directory
     #[arg(default_value = ".")]
     pub path: PathBuf,
+}
+
+/// Supported agent harnesses for `skilo eval`.
+#[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EvalAgent {
+    /// Pi Mono — native --skill flag support (default)
+    PiMono,
+    /// Claude Code — copies skill to .claude/skills/
+    Claude,
+    /// Codex by OpenAI
+    Codex,
+    /// Cursor
+    Cursor,
+    /// Amp by Sourcegraph
+    Amp,
+    /// Goose by Block
+    Goose,
+    /// Gemini CLI by Google
+    Gemini,
+    /// OpenCode
+    OpenCode,
+    /// Kilo Code
+    KiloCode,
+    /// Roo Code
+    RooCode,
+    /// Antigravity
+    Antigravity,
+    /// GitHub Copilot
+    Copilot,
+    /// Windsurf by Codeium
+    Windsurf,
 }
 
 /// Arguments for the `self update` command.

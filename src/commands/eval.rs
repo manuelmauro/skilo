@@ -1,10 +1,11 @@
 //! The `eval` command implementation.
 
-use crate::cli::{Cli, EvalArgs, EvalCommand};
+use crate::cli::{Cli, EvalAgent, EvalArgs, EvalCommand};
 use crate::config::Config;
 use crate::error::SkiloError;
+use crate::eval::agents::{ClaudeRunner, GenericRunner, PiRunner};
 use crate::eval::{
-    format_results, run_suite, scaffold_eval, AgentConfig, EvalSuite, ReportFormat, RunOptions,
+    format_results, run_suite, scaffold_eval, AgentRunner, EvalSuite, ReportFormat, RunOptions,
     TestStatus,
 };
 use crate::skill::Discovery;
@@ -83,16 +84,22 @@ fn run_eval(args: EvalArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloErro
         };
 
         if args.dry_run {
-            println!("Parsed: {} ({} tests)", suite.name, suite.total_tests());
+            let agent_name = resolve_agent_name(&args, &suite, config);
+            println!(
+                "Parsed: {} ({} tests, agent: {})",
+                suite.name,
+                suite.total_tests(),
+                agent_name
+            );
             continue;
         }
 
-        // Build agent config with CLI overrides.
-        let agent = build_agent_config(&args, &suite, config);
+        // Build the agent runner with CLI overrides.
+        let agent = build_agent_runner(&args, &suite, config);
 
         // Verify agent is available.
         if let Err(e) = agent.verify() {
-            eprintln!("Agent error: {}", e);
+            eprintln!("Agent error ({}): {}", agent.display_name(), e);
             return Ok(4);
         }
 
@@ -107,7 +114,7 @@ fn run_eval(args: EvalArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloErro
         };
 
         // Run the suite.
-        let results = run_suite(&suite, &agent, &options);
+        let results = run_suite(&suite, agent.as_ref(), &options);
 
         // Report results.
         let skill_name = suite
@@ -128,24 +135,238 @@ fn run_eval(args: EvalArgs, config: &Config, cli: &Cli) -> Result<i32, SkiloErro
     Ok(overall_exit)
 }
 
-fn build_agent_config(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> AgentConfig {
-    AgentConfig {
-        bin: config.eval.agent_bin.clone().unwrap_or_else(|| "pi".into()),
-        model: args
-            .model
-            .clone()
-            .or_else(|| suite.model.clone())
-            .or_else(|| config.eval.default_model.clone()),
-        provider: args
-            .provider
-            .clone()
-            .or_else(|| suite.provider.clone())
-            .or_else(|| config.eval.default_provider.clone()),
-        thinking: args
-            .thinking
-            .clone()
-            .or_else(|| suite.thinking.clone())
-            .or_else(|| config.eval.default_thinking.clone()),
+/// Resolve which agent to use from CLI args > EVAL.md frontmatter > config > default.
+fn resolve_agent_name(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> String {
+    // CLI --agent takes highest priority.
+    if let Some(agent) = &args.agent {
+        return eval_agent_to_cli_name(agent).to_string();
+    }
+
+    // EVAL.md frontmatter `agent:` field.
+    if let Some(agent) = &suite.agent {
+        return agent.clone();
+    }
+
+    // Config file `[eval] agent` field.
+    if let Some(agent) = &config.eval.default_agent {
+        return agent.clone();
+    }
+
+    // Default to pi-mono.
+    "pi-mono".to_string()
+}
+
+/// Build the appropriate agent runner based on resolved agent selection.
+fn build_agent_runner(args: &EvalArgs, suite: &EvalSuite, config: &Config) -> Box<dyn AgentRunner> {
+    let agent_name = resolve_agent_name(args, suite, config);
+
+    // Resolve model/provider/thinking with CLI > EVAL.md > config precedence.
+    let model = args
+        .model
+        .clone()
+        .or_else(|| suite.model.clone())
+        .or_else(|| config.eval.default_model.clone());
+    let provider = args
+        .provider
+        .clone()
+        .or_else(|| suite.provider.clone())
+        .or_else(|| config.eval.default_provider.clone());
+    let thinking = args
+        .thinking
+        .clone()
+        .or_else(|| suite.thinking.clone())
+        .or_else(|| config.eval.default_thinking.clone());
+
+    match agent_name.as_str() {
+        "pi-mono" | "pi" => Box::new(PiRunner {
+            bin: config.eval.agent_bin.clone().unwrap_or_else(|| "pi".into()),
+            model,
+            provider,
+            thinking,
+        }),
+        "claude" => Box::new(ClaudeRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "claude".into()),
+            model,
+        }),
+        "codex" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "codex".into()),
+            name: "Codex".into(),
+            non_interactive_flags: vec!["--quiet".into()],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".codex/skills".into(),
+        }),
+        "cursor" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "cursor".into()),
+            name: "Cursor".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".cursor/skills".into(),
+        }),
+        "amp" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "amp".into()),
+            name: "Amp".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".agents/skills".into(),
+        }),
+        "goose" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "goose".into()),
+            name: "Goose".into(),
+            non_interactive_flags: vec!["run".into()],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".goose/skills".into(),
+        }),
+        "gemini" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "gemini".into()),
+            name: "Gemini CLI".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".gemini/skills".into(),
+        }),
+        "opencode" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "opencode".into()),
+            name: "OpenCode".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".opencode/skill".into(),
+        }),
+        "kilocode" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "kilocode".into()),
+            name: "Kilo Code".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".kilocode/skills".into(),
+        }),
+        "roocode" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "roocode".into()),
+            name: "Roo Code".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".roo/skills".into(),
+        }),
+        "antigravity" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "antigravity".into()),
+            name: "Antigravity".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".agent/skills".into(),
+        }),
+        "copilot" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "copilot".into()),
+            name: "GitHub Copilot".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".github/skills".into(),
+        }),
+        "windsurf" => Box::new(GenericRunner {
+            bin: config
+                .eval
+                .agent_bin
+                .clone()
+                .unwrap_or_else(|| "windsurf".into()),
+            name: "Windsurf".into(),
+            non_interactive_flags: vec![],
+            prompt_flags: vec![],
+            model_flag: Some("--model".into()),
+            model,
+            skills_dir: ".windsurf/skills".into(),
+        }),
+        // Fallback: treat unknown agent names as pi-mono.
+        other => {
+            eprintln!(
+                "Warning: Unknown agent '{}', falling back to Pi Mono",
+                other
+            );
+            Box::new(PiRunner {
+                bin: config.eval.agent_bin.clone().unwrap_or_else(|| "pi".into()),
+                model,
+                provider,
+                thinking,
+            })
+        }
+    }
+}
+
+/// Map EvalAgent enum variant to the CLI name used in agent resolution.
+fn eval_agent_to_cli_name(agent: &EvalAgent) -> &'static str {
+    match agent {
+        EvalAgent::PiMono => "pi-mono",
+        EvalAgent::Claude => "claude",
+        EvalAgent::Codex => "codex",
+        EvalAgent::Cursor => "cursor",
+        EvalAgent::Amp => "amp",
+        EvalAgent::Goose => "goose",
+        EvalAgent::Gemini => "gemini",
+        EvalAgent::OpenCode => "opencode",
+        EvalAgent::KiloCode => "kilocode",
+        EvalAgent::RooCode => "roocode",
+        EvalAgent::Antigravity => "antigravity",
+        EvalAgent::Copilot => "copilot",
+        EvalAgent::Windsurf => "windsurf",
     }
 }
 

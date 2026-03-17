@@ -2,7 +2,7 @@
 //!
 //! Runs the same prompt with and without the skill, comparing metrics.
 
-use crate::eval::agent::{AgentConfig, AgentError};
+use crate::eval::agent::{AgentError, AgentRunner};
 use crate::eval::runner::{TestRunResult, TestStatus};
 use crate::eval::{PerfAssertion, PerfMetric, PerfTest};
 use std::path::Path;
@@ -33,7 +33,7 @@ pub struct PerfComparison {
 /// Run a single performance comparison test.
 pub fn run_perf_test(
     test: &PerfTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
 ) -> Result<TestRunResult, AgentError> {
@@ -106,7 +106,7 @@ fn evaluate_metric(
             )
         }
         PerfMetric::MessageCount(assertion) => {
-            // Not directly measurable via pi --print; use a placeholder.
+            // Not directly measurable via agent output; use a placeholder.
             evaluate_assertion("message_count", 0, 0, assertion)
         }
         PerfMetric::ToolCallCount(assertion) => {
@@ -159,7 +159,7 @@ fn percentage_decrease(baseline: u64, current: u64) -> u64 {
 /// Run a perf test with multiple runs and return all results.
 pub fn run_perf_test_multi(
     test: &PerfTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
     runs: u32,

@@ -2,7 +2,7 @@
 //!
 //! Runs a prompt with the skill loaded and grades the output against expectations.
 
-use crate::eval::agent::{AgentConfig, AgentError};
+use crate::eval::agent::{AgentError, AgentRunner};
 use crate::eval::graders::grade_output;
 use crate::eval::runner::{TestRunResult, TestStatus};
 use crate::eval::FunctionalTest;
@@ -12,7 +12,7 @@ use std::time::Duration;
 /// Run a single functional test.
 pub fn run_functional_test(
     test: &FunctionalTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
 ) -> Result<TestRunResult, AgentError> {
@@ -76,7 +76,7 @@ fn build_prompt(test: &FunctionalTest) -> String {
 /// Run a functional test with multiple runs and return all results.
 pub fn run_functional_test_multi(
     test: &FunctionalTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
     runs: u32,

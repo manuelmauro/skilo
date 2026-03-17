@@ -47,11 +47,14 @@ pub struct EvalFrontmatter {
     pub name: String,
     /// Description of what is being evaluated.
     pub description: String,
-    /// Model to pass to `pi --model`.
+    /// Agent to use for evaluation (e.g., "pi-mono", "claude", "codex").
+    /// If not specified, defaults to the configured agent or "pi-mono".
+    pub agent: Option<String>,
+    /// Model to pass to the agent's `--model` flag.
     pub model: Option<String>,
-    /// Provider to pass to `pi --provider`.
+    /// Provider to pass to the agent's `--provider` flag.
     pub provider: Option<String>,
-    /// Thinking level to pass to `pi --thinking`.
+    /// Thinking level to pass to the agent's `--thinking` flag.
     pub thinking: Option<String>,
     /// Number of times to run each test.
     pub runs: u32,
@@ -66,6 +69,7 @@ impl Default for EvalFrontmatter {
         Self {
             name: String::new(),
             description: String::new(),
+            agent: None,
             model: None,
             provider: None,
             thinking: None,
@@ -87,6 +91,8 @@ pub struct EvalSuite {
     pub name: String,
     /// Description.
     pub description: String,
+    /// Agent to use (e.g., "pi-mono", "claude", "codex").
+    pub agent: Option<String>,
     /// Model override.
     pub model: Option<String>,
     /// Provider override.
@@ -253,6 +259,7 @@ impl EvalSuite {
             skill_path,
             name: fm.name,
             description: fm.description,
+            agent: fm.agent,
             model: fm.model,
             provider: fm.provider,
             thinking: fm.thinking,

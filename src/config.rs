@@ -205,13 +205,16 @@ pub struct DiscoveryConfig {
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct EvalConfig {
-    /// Path to the pi binary (default: "pi" from PATH).
+    /// Default agent harness (e.g., "pi-mono", "claude", "codex").
+    /// If not set, defaults to "pi-mono".
+    pub default_agent: Option<String>,
+    /// Path to the agent binary (overrides the default for the selected agent).
     pub agent_bin: Option<String>,
-    /// Default model for evaluations (passed to `pi --model`).
+    /// Default model for evaluations (passed to agent's `--model` flag).
     pub default_model: Option<String>,
-    /// Default provider (passed to `pi --provider`).
+    /// Default provider (passed to agent's `--provider` flag).
     pub default_provider: Option<String>,
-    /// Default thinking level (passed to `pi --thinking`).
+    /// Default thinking level (passed to agent's `--thinking` flag).
     pub default_thinking: Option<String>,
     /// Default number of runs per test.
     pub default_runs: Option<u32>,

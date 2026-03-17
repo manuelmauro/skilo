@@ -3,7 +3,7 @@
 //! Runs a prompt with the skill loaded and checks whether the skill was
 //! activated by inspecting the agent output.
 
-use crate::eval::agent::{AgentConfig, AgentError};
+use crate::eval::agent::{AgentError, AgentRunner};
 use crate::eval::runner::{TestRunResult, TestStatus};
 use crate::eval::TriggerTest;
 use std::path::Path;
@@ -12,7 +12,7 @@ use std::time::Duration;
 /// Run a single triggering test.
 pub fn run_trigger_test(
     test: &TriggerTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
 ) -> Result<TestRunResult, AgentError> {
@@ -76,7 +76,7 @@ fn detect_skill_activation(with_skill: &str, without_skill: &str) -> bool {
 /// Run a trigger test with multiple runs and return all results.
 pub fn run_trigger_test_multi(
     test: &TriggerTest,
-    agent: &AgentConfig,
+    agent: &dyn AgentRunner,
     skill_path: &Path,
     timeout: u64,
     runs: u32,

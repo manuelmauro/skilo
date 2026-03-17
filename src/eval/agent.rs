@@ -1,4 +1,7 @@
-//! Pi agent subprocess management.
+//! Agent runner trait and shared types.
+//!
+//! Defines the interface that all agent harnesses must implement,
+//! plus shared output/error types.
 
 use std::path::Path;
 use std::process::{Command, Output};
@@ -9,7 +12,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum AgentError {
     /// The agent binary was not found.
-    #[error("Agent binary '{bin}' not found. Is pi installed?")]
+    #[error("Agent binary '{bin}' not found. Is it installed?")]
     NotFound {
         /// The binary name.
         bin: String,
@@ -22,30 +25,14 @@ pub enum AgentError {
     /// The agent process timed out.
     #[error("Agent timed out after {0} seconds")]
     Timeout(u64),
-}
 
-/// Configuration for invoking the pi agent.
-#[derive(Debug, Clone)]
-pub struct AgentConfig {
-    /// Path to the pi binary.
-    pub bin: String,
-    /// Model override (passed to `pi --model`).
-    pub model: Option<String>,
-    /// Provider override (passed to `pi --provider`).
-    pub provider: Option<String>,
-    /// Thinking level override (passed to `pi --thinking`).
-    pub thinking: Option<String>,
-}
+    /// Skill installation/setup failed.
+    #[error("Failed to set up skill for agent: {0}")]
+    SkillSetupFailed(String),
 
-impl Default for AgentConfig {
-    fn default() -> Self {
-        Self {
-            bin: "pi".into(),
-            model: None,
-            provider: None,
-            thinking: None,
-        }
-    }
+    /// Skill cleanup failed (non-fatal).
+    #[error("Failed to clean up skill after test: {0}")]
+    CleanupFailed(String),
 }
 
 /// Result of an agent invocation.
@@ -61,91 +48,74 @@ pub struct AgentOutput {
     pub duration: Duration,
 }
 
-impl AgentConfig {
+/// Trait for agent harness implementations.
+///
+/// Each supported AI coding agent implements this trait to define how
+/// to invoke it with and without skills loaded.
+pub trait AgentRunner: Send + Sync {
     /// Check that the agent binary is available.
-    pub fn verify(&self) -> Result<(), AgentError> {
-        let output = Command::new("which")
-            .arg(&self.bin)
-            .output()
-            .map_err(AgentError::SpawnFailed)?;
-
-        if !output.status.success() {
-            return Err(AgentError::NotFound {
-                bin: self.bin.clone(),
-            });
-        }
-        Ok(())
-    }
+    fn verify(&self) -> Result<(), AgentError>;
 
     /// Run the agent with a skill loaded.
-    pub fn run_with_skill(
+    fn run_with_skill(
         &self,
         skill_path: &Path,
         prompt: &str,
         timeout_secs: u64,
-    ) -> Result<AgentOutput, AgentError> {
-        let mut cmd = self.base_command();
-        cmd.args(["--skill", &skill_path.display().to_string()]);
-        cmd.arg(prompt);
-        self.execute(cmd, timeout_secs)
-    }
+    ) -> Result<AgentOutput, AgentError>;
 
-    /// Run the agent without any skills (for baseline).
-    pub fn run_without_skill(
-        &self,
-        prompt: &str,
-        timeout_secs: u64,
-    ) -> Result<AgentOutput, AgentError> {
-        let mut cmd = self.base_command();
-        cmd.arg("--no-skills");
-        cmd.arg(prompt);
-        self.execute(cmd, timeout_secs)
-    }
+    /// Run the agent without any skills (for baseline comparison).
+    fn run_without_skill(&self, prompt: &str, timeout_secs: u64)
+        -> Result<AgentOutput, AgentError>;
 
-    fn base_command(&self) -> Command {
-        let mut cmd = Command::new(&self.bin);
-        cmd.args(["--print", "--no-session"]);
+    /// Display name for this agent runner (for error messages and logs).
+    fn display_name(&self) -> &str;
+}
 
-        if let Some(model) = &self.model {
-            cmd.args(["--model", model]);
+/// Execute a command with a timeout and return the output.
+///
+/// Shared helper used by all agent runner implementations.
+pub fn execute_command(mut cmd: Command, timeout_secs: u64) -> Result<AgentOutput, AgentError> {
+    let start = Instant::now();
+
+    let mut child = cmd
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(AgentError::SpawnFailed)?;
+
+    let timeout = Duration::from_secs(timeout_secs);
+    let output: Output = match wait_with_timeout(&mut child, timeout) {
+        Some(result) => result.map_err(AgentError::SpawnFailed)?,
+        None => {
+            let _ = child.kill();
+            return Err(AgentError::Timeout(timeout_secs));
         }
-        if let Some(provider) = &self.provider {
-            cmd.args(["--provider", provider]);
-        }
-        if let Some(thinking) = &self.thinking {
-            cmd.args(["--thinking", thinking]);
-        }
+    };
 
-        cmd
+    let duration = start.elapsed();
+
+    Ok(AgentOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+        duration,
+    })
+}
+
+/// Verify that a binary is available on PATH.
+pub fn verify_binary(bin: &str) -> Result<(), AgentError> {
+    let output = Command::new("which")
+        .arg(bin)
+        .output()
+        .map_err(AgentError::SpawnFailed)?;
+
+    if !output.status.success() {
+        return Err(AgentError::NotFound {
+            bin: bin.to_string(),
+        });
     }
-
-    fn execute(&self, mut cmd: Command, timeout_secs: u64) -> Result<AgentOutput, AgentError> {
-        let start = Instant::now();
-
-        let mut child = cmd
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-            .map_err(AgentError::SpawnFailed)?;
-
-        let timeout = Duration::from_secs(timeout_secs);
-        let output: Output = match wait_with_timeout(&mut child, timeout) {
-            Some(result) => result.map_err(AgentError::SpawnFailed)?,
-            None => {
-                let _ = child.kill();
-                return Err(AgentError::Timeout(timeout_secs));
-            }
-        };
-
-        let duration = start.elapsed();
-
-        Ok(AgentOutput {
-            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            exit_code: output.status.code().unwrap_or(-1),
-            duration,
-        })
-    }
+    Ok(())
 }
 
 /// Wait for a child process with a timeout.
