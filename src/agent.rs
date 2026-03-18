@@ -105,7 +105,7 @@ impl Agent {
             Agent::Clawdbot => "skills",
             Agent::Droid => ".factory/skills",
             Agent::Windsurf => ".windsurf/skills",
-            Agent::PiMono => ".pi/agent/skills",
+            Agent::PiMono => ".pi/skills",
         }
     }
 
