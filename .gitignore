@@ -1,4 +1,5 @@
 /target
+/.pi/
 
 # OS
 .DS_Store
