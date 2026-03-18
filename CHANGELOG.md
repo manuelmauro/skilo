@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-03-18
+
+### Added
+
+- Pi Mono agent support with project-level (`.pi/skills`) and global (`~/.pi/agent/skills`) skill directories
+- CodeRabbit configuration for automated code review
+- Lefthook pre-commit hooks running full CI checks
+- Commit-msg hook to enforce conventional commits
+
+### Fixed
+
+- Pi Mono project-level skills directory now correctly points to `.pi/skills` instead of `.pi/agent/skills`
+
 ## [0.10.0] - 2026-03-12
 
 ### Added
