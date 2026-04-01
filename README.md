@@ -96,7 +96,7 @@ default_license = "MIT"
 default_template = "hello-world"
 
 [add]
-# default_agent = "claude"  # Optional: defaults to ./skills/
+# default_agent = "pi-mono"  # Optional: defaults to ./skills/
 confirm = true
 ```
 
@@ -107,9 +107,9 @@ See `skilo lint --help` for all available rules.
 Skilo supports 14 AI coding agents. By default, skills install to `./skills/`. Use `--agent` to target specific agents:
 
 ```bash
-skilo add owner/repo --agent claude           # Install to .claude/skills/
+skilo add owner/repo --agent pi-mono          # Install to .pi/skills/
 skilo add owner/repo --agent all              # Install to all detected agents
-skilo new my-skill --global --agent claude    # Create global skill
+skilo new my-skill --global --agent pi-mono   # Create global skill
 skilo agents                                  # List detected agents
 ```
 
