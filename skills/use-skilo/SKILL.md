@@ -135,5 +135,5 @@ Skilo enforces these rules (configure in `.skilorc.toml`):
 - name: Validate skills
   run: |
     curl -sSfL https://raw.githubusercontent.com/manuelmauro/skilo/main/install.sh | sh
-    skilo check --strict .claude/skills/
+    skilo check --strict skills/
 ```
