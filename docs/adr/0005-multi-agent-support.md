@@ -1,3 +1,13 @@
+---
+id: 0005-multi-agent-support
+title: 'ADR 0005: Multi-Agent Support'
+abstract: Make skilo agent-agnostic so it can install and manage skills for multiple AI coding agents.
+status: accepted
+date: 2026-01-20
+deciders: []
+tags: []
+---
+
 # ADR 0005: Multi-Agent Support
 
 ## Status

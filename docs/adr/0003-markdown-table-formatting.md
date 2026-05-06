@@ -1,3 +1,13 @@
+---
+id: 0003-markdown-table-formatting
+title: 'ADR 0003: Markdown Table Formatting'
+abstract: Extend `skilo fmt` to normalize markdown table formatting in SKILL.md bodies for consistent output.
+status: proposed
+date: 2026-01-12
+deciders: []
+tags: []
+---
+
 # ADR 0003: Markdown Table Formatting
 
 ## Status

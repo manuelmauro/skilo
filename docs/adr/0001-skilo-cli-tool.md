@@ -1,3 +1,13 @@
+---
+id: 0001-skilo-cli-tool
+title: 'ADR 0001: Skilo CLI Tool Architecture'
+abstract: Define the architecture and core commands of skilo, a Rust CLI for scaffolding, linting, and formatting Agent Skills.
+status: proposed
+date: 2025-12-22
+deciders: []
+tags: []
+---
+
 # ADR 0001: Skilo CLI Tool Architecture
 
 ## Status

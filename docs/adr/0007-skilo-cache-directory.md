@@ -1,3 +1,13 @@
+---
+id: 0007-skilo-cache-directory
+title: 'ADR 0007: Skilo Cache Directory'
+abstract: Introduce a persistent skilo cache directory for cloned repositories to avoid redundant downloads on `skilo add`.
+status: proposed
+date: 2026-01-20
+deciders: []
+tags: []
+---
+
 # ADR 0007: Skilo Cache Directory
 
 ## Status
