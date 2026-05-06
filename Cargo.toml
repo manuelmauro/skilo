@@ -18,7 +18,7 @@ missing_docs = "deny"
 clap = { version = "4", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4"
 colored = "3"
-comrak = "0.49"
+comrak = "0.52"
 dialoguer = "0.12"
 dirs = "6"
 git2 = { version = "0.20", features = ["vendored-libgit2"] }
