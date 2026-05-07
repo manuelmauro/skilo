@@ -1,3 +1,13 @@
+---
+id: 0002-rust-implementation
+title: 'ADR 0002: Rust Implementation'
+abstract: Document the Rust implementation details for skilo, including crate dependencies, module organization, and key data structures.
+status: proposed
+date: 2025-12-22
+deciders: []
+tags: []
+---
+
 # ADR 0002: Rust Implementation
 
 ## Status

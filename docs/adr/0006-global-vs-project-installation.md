@@ -1,3 +1,13 @@
+---
+id: 0006-global-vs-project-installation
+title: 'ADR 0006: Global vs Project-Level Installation'
+abstract: Support both global (user-wide) and project-local skill installation scopes in skilo.
+status: accepted
+date: 2026-01-20
+deciders: []
+tags: []
+---
+
 # ADR 0006: Global vs Project-Level Installation
 
 ## Status

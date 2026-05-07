@@ -1,3 +1,13 @@
+---
+id: 0004-skill-installation-from-git
+title: 'ADR 0004: Skill Installation from Git Repositories'
+abstract: Add `skilo add` to install skills from remote git repositories, complementing skilo's create, validate, and format workflow.
+status: accepted
+date: 2026-01-19
+deciders: []
+tags: []
+---
+
 # ADR 0004: Skill Installation from Git Repositories
 
 ## Status
