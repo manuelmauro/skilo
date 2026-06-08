@@ -15,9 +15,10 @@ Steps to prepare a new skilo release.
 3. Update version in `Cargo.toml`
 4. Update `Cargo.lock`
 5. Update `CHANGELOG.md`
-6. Find and update version references in docs
-7. Commit changes (including `Cargo.lock`)
-8. Create git tag
+6. Update the supported versions table in `.github/SECURITY.md`
+7. Find and update version references in docs
+8. Commit changes (including `Cargo.lock`)
+9. Create git tag
 
 ## Version Bump
 
@@ -65,6 +66,19 @@ Common locations:
 - `README.md` - CI example (`cargo install skilo@X.Y.Z`)
 - Installation instructions
 - Badge URLs
+
+## Update Supported Versions in SECURITY.md
+
+`.github/SECURITY.md` declares which release series receives security fixes.
+Bump its **Supported Versions** table so the new minor series is marked
+supported and any series that is no longer maintained is dropped:
+
+```markdown
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.11.x  | :white_check_mark: |
+| < 0.11  | :x:                |
+```
 
 ## Release Commands
 
