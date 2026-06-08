@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-06-08
+
+### Security
+
+- `skilo add` no longer follows symbolic links when copying a skill into the install directory. Previously a malicious skill source could include a symlink (e.g. `reference.txt -> ~/.ssh/id_rsa`) whose target was dereferenced and copied into the installed skill, disclosing arbitrary local files such as SSH keys, credentials, or `.env` files (CWE-59 / CWE-61). Symlink entries are now rejected during install.
+
 ## [0.11.0] - 2026-03-18
 
 ### Added
