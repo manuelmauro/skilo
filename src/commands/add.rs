@@ -575,11 +575,19 @@ fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), SkiloError> {
 
     for entry in fs::read_dir(src)? {
         let entry = entry?;
+        // `file_type()` does not traverse symlinks, so this reports the link
+        // itself. Refuse symlinks: `fs::copy` would dereference them and copy
+        // the contents of whatever they point at (potentially files outside the
+        // skill, such as SSH keys or credentials) into the installed skill.
         let ty = entry.file_type()?;
         let src_path = entry.path();
         let dst_path = dst.join(entry.file_name());
 
-        if ty.is_dir() {
+        if ty.is_symlink() {
+            return Err(SkiloError::SymlinkInSkill {
+                path: src_path.display().to_string(),
+            });
+        } else if ty.is_dir() {
             copy_dir_all(&src_path, &dst_path)?;
         } else {
             fs::copy(&src_path, &dst_path)?;
@@ -628,5 +636,85 @@ mod tests {
 
         let filtered = filter_skills(skills, &None);
         assert_eq!(filtered.len(), 2);
+    }
+
+    /// Regression test for the symlink-following exfiltration vulnerability:
+    /// a malicious skill containing a symlink to an out-of-tree secret must be
+    /// refused, not silently dereferenced into the installed skill directory.
+    #[cfg(unix)]
+    #[test]
+    fn test_copy_dir_all_rejects_symlink_exfiltration() {
+        use std::os::unix::fs::symlink;
+
+        let temp = TempDir::new().unwrap();
+
+        // A secret file living OUTSIDE the skill source directory.
+        let secret = temp.path().join("secret.txt");
+        fs::write(&secret, "TOP-SECRET-fake-private-key").unwrap();
+
+        // A skill source with a valid file plus a symlink to the secret.
+        let src = temp.path().join("malicious-skill");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("SKILL.md"), "# skill").unwrap();
+        symlink(&secret, src.join("reference.txt")).unwrap();
+
+        let dst = temp.path().join("installed");
+
+        // The copy must refuse rather than dereference the symlink.
+        let err = copy_dir_all(&src, &dst).unwrap_err();
+        assert!(
+            matches!(err, SkiloError::SymlinkInSkill { .. }),
+            "expected SymlinkInSkill, got: {err:?}"
+        );
+
+        // The secret's contents must NOT have been written into the install dir.
+        assert!(
+            !dst.join("reference.txt").exists(),
+            "symlink target was leaked into the installed skill"
+        );
+    }
+
+    /// Symlinks nested deeper than the top level must also be refused, proving
+    /// the guard fires during the recursive descent, not just at the root.
+    #[cfg(unix)]
+    #[test]
+    fn test_copy_dir_all_rejects_nested_symlink() {
+        use std::os::unix::fs::symlink;
+
+        let temp = TempDir::new().unwrap();
+        let secret = temp.path().join("secret.txt");
+        fs::write(&secret, "secret").unwrap();
+
+        let src = temp.path().join("skill");
+        let nested = src.join("docs");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(src.join("SKILL.md"), "# skill").unwrap();
+        symlink(&secret, nested.join("leak.txt")).unwrap();
+
+        let dst = temp.path().join("installed");
+        let err = copy_dir_all(&src, &dst).unwrap_err();
+        assert!(matches!(err, SkiloError::SymlinkInSkill { .. }));
+        assert!(!dst.join("docs").join("leak.txt").exists());
+    }
+
+    /// Control: an ordinary skill (regular files, nested dirs, no symlinks)
+    /// still copies through cleanly.
+    #[test]
+    fn test_copy_dir_all_copies_regular_files() {
+        let temp = TempDir::new().unwrap();
+        let src = temp.path().join("skill");
+        let nested = src.join("docs");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(src.join("SKILL.md"), "# skill").unwrap();
+        fs::write(nested.join("ref.txt"), "hello").unwrap();
+
+        let dst = temp.path().join("installed");
+        copy_dir_all(&src, &dst).unwrap();
+
+        assert_eq!(fs::read_to_string(dst.join("SKILL.md")).unwrap(), "# skill");
+        assert_eq!(
+            fs::read_to_string(dst.join("docs").join("ref.txt")).unwrap(),
+            "hello"
+        );
     }
 }

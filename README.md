@@ -54,6 +54,24 @@ skilo add manuelmauro/skilo --skill use-skilo
 | `self update`      | Update skilo to latest version     |
 | `self completions` | Generate shell completions         |
 
+## Security
+
+`skilo add` downloads and copies skill content onto your machine, and your AI
+assistant reads — and may act on — the instructions inside an installed skill.
+**Only install skills from sources you trust.**
+
+Treat a skills repository like any other code dependency:
+
+- Review a skill's contents before installing from an unfamiliar source.
+- Prefer pinning to a specific commit or tag rather than a moving branch.
+- Remember that skill instructions are interpreted by your agent with your
+  privileges.
+
+As a safeguard, skilo refuses to install a skill that contains a symbolic link,
+so a malicious source cannot use a symlink to copy files from outside the skill
+(SSH keys, credentials, `.env` files, …) into the installed copy. This is a
+safety net, not a substitute for trusting the source.
+
 ## Skill Structure
 
 ```
