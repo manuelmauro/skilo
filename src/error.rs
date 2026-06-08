@@ -61,6 +61,19 @@ pub enum SkiloError {
     #[diagnostic(code(skilo::invalid_source))]
     InvalidSource(String, String),
 
+    /// A skill contains a symbolic link, which is refused during install.
+    #[error("Refusing to install: skill contains a symbolic link at {path}")]
+    #[diagnostic(
+        code(skilo::symlink_in_skill),
+        help(
+            "Symbolic links are not allowed inside skills because they can point to files outside the skill directory (e.g. SSH keys or credentials), which would be copied into the installed skill. Remove '{path}' from the source and try again."
+        )
+    )]
+    SymlinkInSkill {
+        /// The path of the offending symbolic link.
+        path: String,
+    },
+
     /// Git operation failed.
     #[error("Git error: {message}")]
     #[diagnostic(code(skilo::git))]
